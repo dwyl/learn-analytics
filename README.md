@@ -2,11 +2,11 @@
 
 # Learn `Analytics` 📈
 
-</div>
-
 _Understand_ `Analytics`
 so you can build a better product/service
 through data-driven decision-making.
+
+</div>
 
 # Why? 💭
 
@@ -80,35 +80,38 @@ but we _know_ one thing for _sure_:
 **_highly_ successful companies** like `Google`, `Amazon`
 are **_hyper_ focussed** on their **`Analytics`**.
 _All_ the executives, product owners and builders know _exactly_
-which OKR they are focussing on and exclude everything else.
-We cannot rule-out
+which
+[OKR](https://en.wikipedia.org/wiki/Objectives_and_key_results)
+they are focussing on and exclude everything else.
+
+Counterpoint: we cannot rule-out
 [confirmation](https://en.wikipedia.org/wiki/Confirmation_bias)
 or
 [survivorship](https://en.wikipedia.org/wiki/Survivorship_bias)
-bias meaning we may ignore companies that failed while being data-driven.
+bias, meaning we may ignore companies that failed
+while being somewhat data-driven.
 e.g: the businesses that failed also listened to `data`,
 just the
 [_wrong_ `data`](https://www.goodreads.com/quotes/9923896-management-is-doing-things-right-leadership-is-doing-the-right).
 💭
 
-
 # When? ⏳
 
 Get started _today_
-in less than 5 minutes
-by skimming part 2 of this guide.
+in less than **5 minutes**
+by **_speed reading_ part 2** of this guide. <br />
 Then decide how far you want to take your `Analytics` journey.
 
 # How? 👩‍💻
 
 This repo is divided into 3 parts:
-1. **_Setup_**: get `Plausible Analytics` "**_Community_ Edition**"
-   running on your own infrastructure; in our case `DigitalOcean`.
+1. **_Deploy_**: deploy `Plausible Analytics` "**_Community_ Edition**"
+   on your chosen infrastructure; in our case `DigitalOcean`.
    > **Note**: the instructions use `Docker`
    so any competent
    [`DevOps`](https://github.com/dwyl/learn-devops)
-   person should be able to deploy it in **`~20mins`
-   on _any_ Cloud provider 
+   person can deploy it in **`~20mins`**
+   on _any_ Cloud provider
    (e.g: `AWS`, `Azure`, `Google Cloud`, etc.)
    by following the detailed step-by-step instructions.
 2. **_Navigate_**: a guided tour of the `Analytics` _interface_
@@ -118,5 +121,11 @@ This repo is divided into 3 parts:
 
 Choose your own adventure! 🗺️
 
+<br />
+
+# And Then? 
+
+
 
 [![HitCount](https://hits.dwyl.com/dwyl/learn-analytics.svg?style=flat-square)](http://hits.dwyl.com/dwyl/learn-analytics)
+
