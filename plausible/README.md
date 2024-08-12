@@ -1,6 +1,6 @@
-# Deploying `Plausible Analytics` on-prem
+# Self-hosting `Plausible Analytics`
 
-- [Deploying `Plausible Analytics` on-prem](#deploying-plausible-analytics-on-prem)
+- [Self-hosting `Plausible Analytics`](#self-hosting-plausible-analytics)
 - [Why? 🤷‍](#why-)
 - [What? 💭](#what-)
 - [Who? 👤](#who-)

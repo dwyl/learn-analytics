@@ -116,6 +116,12 @@ This repo is divided into 3 parts:
 3. **Take _Action_**: Sample _actions_ that can be taken
    based on the _insights_ we learn from our `Analytics`.
 
+Any `Plausible`-related information can be found in the [`plausible`](./plausible/) folder,
+where you can get quickly get started on setting up a `Plausible CE` instance
+and a `Next.js` website,
+both on `localhost`.
+
+
 Choose your own adventure! 🗺️
 
 
