@@ -122,7 +122,4 @@ and a `Next.js` website,
 both on `localhost`.
 
 
-Choose your own adventure! 🗺️
-
-
 [![HitCount](https://hits.dwyl.com/dwyl/learn-analytics.svg?style=flat-square)](http://hits.dwyl.com/dwyl/learn-analytics)
