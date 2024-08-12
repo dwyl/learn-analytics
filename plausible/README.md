@@ -5,22 +5,26 @@
 - [What? 💭](#what-)
 - [Who? 👤](#who-)
 - [How? 👩‍💻](#how-)
+  - [Pre-requisites](#pre-requisites)
   - [0. Quickstart](#0-quickstart)
   - [1. Getting `Plausible CE` running on your `localhost`](#1-getting-plausible-ce-running-on-your-localhost)
     - [1.1. Configuring `plausible-conf.env`](#11-configuring-plausible-confenv)
     - [1.2 Configuring `reverse-proxy/docker-compose.caddy-gen.yml` for production](#12-configuring-reverse-proxydocker-composecaddy-genyml-for-production)
     - [1.3 Running it!](#13-running-it)
-  - [2. Monitoring a `Next.js` website](#2-monitoring-a-nextjs-website)
-    - [2.1 Clone the `Next.js` site](#21-clone-the-nextjs-site)
-    - [2.2 Using `next-plausible` to monitor website](#22-using-next-plausible-to-monitor-website)
-      - [2.2.1 Wrapping the application with `<PlausibleProvider>`](#221-wrapping-the-application-with-plausibleprovider)
-      - [2.2.2 Proxying the analytics script](#222-proxying-the-analytics-script)
-      - [2.2.3 Running our `Next.js` app in `HTTPS`](#223-running-our-nextjs-app-in-https)
-  - [3. Exploring custom events in `Plausible`](#3-exploring-custom-events-in-plausible)
-    - [3.1 Sending custom events from `Next.js`](#31-sending-custom-events-from-nextjs)
-    - [3.2 Custom events insights in our self-hosted `Plausible` server](#32-custom-events-insights-in-our-self-hosted-plausible-server)
-    - [3.3 Seeing custom events' props in `Plausible` dashboard](#33-seeing-custom-events-props-in-plausible-dashboard)
-  - [4. Deploying to `fly.io`](#4-deploying-to-flyio)
+  - [2. Monitoring a simple `HTML` website](#2-monitoring-a-simple-html-website)
+  - [3. (*Optional*) Monitoring a `Next.js` website](#3-optional-monitoring-a-nextjs-website)
+    - [3.1 Clone the `Next.js` site](#31-clone-the-nextjs-site)
+    - [3.2 Using `next-plausible` to monitor website](#32-using-next-plausible-to-monitor-website)
+      - [3.2.1 Wrapping the application with `<PlausibleProvider>`](#321-wrapping-the-application-with-plausibleprovider)
+      - [3.2.2 Proxying the analytics script](#322-proxying-the-analytics-script)
+      - [3.2.3 Running our `Next.js` app in `HTTPS`](#323-running-our-nextjs-app-in-https)
+  - [4. Exploring custom events in `Plausible`](#4-exploring-custom-events-in-plausible)
+    - [4.1 Sending custom events from `Next.js`](#41-sending-custom-events-from-nextjs)
+    - [4.2 Custom events insights in our self-hosted `Plausible` server](#42-custom-events-insights-in-our-self-hosted-plausible-server)
+    - [4.3 Seeing custom events' props in `Plausible` dashboard](#43-seeing-custom-events-props-in-plausible-dashboard)
+  - [5. Deploying to `fly.io`](#5-deploying-to-flyio)
+    - [4.1 Clone the template](#41-clone-the-template)
+    - [4.2 Setting up `clickhouse`](#42-setting-up-clickhouse)
 
 
 
@@ -67,12 +71,16 @@ It's particularly relevant for those concerned with privacy, compliance, or simp
 
 # How? 👩‍💻
 
+## Pre-requisites
+
 In this tutorial,
 we are assuming you have [`Docker`](https://docs.docker.com/engine/install/) installed.
 Additionally,
-we will be using [`pnpm` ](https://pnpm.io/installation)
+we will be using `npx` (which should be included in the `npm` install)
+and [`pnpm` ](https://pnpm.io/installation)
 as package manager,
-since we're going to be using a simple [`Next.js`](https://nextjs.org/) application to get insights from.
+since we're going to be using a simple [`Next.js`](https://nextjs.org/) application to get insights from
+(alongside a simpler, barebones `HTML` website).
 
 **We assume you have basic knowledge of the aforementioned**.
 
@@ -80,7 +88,8 @@ We'll go over on setting up `Plausible CE`
 in your `localhost` and seeing insights
 with a website running on `localhost` as well.
 We'll later focus on getting our self-hosted `Plausible` instance
-deployed in `fly.io`.
+deployed in `fly.io`,
+so make sure you have [`flyctl` installed](https://fly.io/docs/flyctl/install/).
 
 Ready to go fast?
 
@@ -114,19 +123,25 @@ Follow through the instructions in the screen
 **Make sure you set the `domain` of the site to `localhost`**
 when following through the wizard.
 
-2. Go to the `website` folder,
+2. Go to the `next_website` folder,
 and run `pnpm run install` and `sudo pnpm run dev`.
 This will run the sample website.
-
 To see the insights in `Plausible`,
 you need to have it running in a terminal,
-and the `Next.js` website in another.
-
-- `Plausible` is running in `http://localhost:8000`.
-- the website is running in `https://localhost:3000`.
-
+and the `Next.js` website in another:
+**`Plausible` is running in `http://localhost:8000`**
+and **the website is running in `https://localhost:3000`**.
 If you interact with the website and navigate around the pages,
 you will see the dashboard displaying insights.
+
+   - Alternatively,
+you can run the `simple_website.html` file
+for a simpler website version,
+without having to use `Next.js`.
+Simply run `npx http-server --cors` inside the `plausible` folder
+to serve the `HTML` file
+and navigate to `http://localhost:8080/simple_website.html`
+in your browser.
 
 And that's it! 😊
 
@@ -340,9 +355,6 @@ you should be done! 👏
 You'll be prompted a screen suggesting you
 how to add the `Plausible` script to your website
 so your self-hosted `Plausible` server can get its data.
-For now, you can safely ignore this suggestion,
-because we're going to be doing it differently
-in our `Next.js` site.
 
 Click on `Start collecting data`.
 You will be redirected to the next page.
@@ -358,7 +370,80 @@ As of now, we have no website running on our `localhost`.
 So let's fix that!
 
 
-## 2. Monitoring a `Next.js` website
+## 2. Monitoring a simple `HTML` website
+
+Let's monitor a simple website made of just a few lines of `HTML`.
+Create a file called `simple_website.html`
+
+```html
+<!doctype html>
+<html>
+  <head>
+    <title>A simple site to test Plausible Analytics</title>
+  </head>
+  <body>
+    <p>Just a simple HTML page to test if Plausible Analytics is working. Great for testing!</p>
+  </body>
+</html>
+```
+
+To start tracking this website,
+all we need to do is follow the instructions that `Plausible` gave us
+after finishing adding the website to the `Plausible CE` server -
+**adding the analytics script**.
+
+Change it to the following.
+
+```html
+<!doctype html>
+<html>
+  <head>
+    <title>A simple site to test Plausible Analytics</title>
+    <script defer data-domain="localhost" src="http://localhost:8000/js/script.local.js"></script>
+  </head>
+  <body>
+    <p>Just a simple HTML page to test if Plausible Analytics is working. Great for testing!</p>
+  </body>
+</html>
+```
+
+`Plausible` offers different analytics scripts for different scenarios.
+You can check an overview in https://plausible.io/docs/script-extensions#all-our-script-extensions.
+In this case,
+because we're running only on `localhost`,
+we'll use the **`script.local.js`** script.
+
+Now, we can *serve* the `HTML` file
+by running `npx http-server --cors`
+and navigating to `http://localhost:8080/simple_website.html` in the browser.
+
+> [!IMPORTANT]
+>
+> Make sure you have `Plausible CE` running in another terminal
+> to record the events our simple website is sending to it.
+
+If you visit `http://localhost:8000/localhost`
+(which is where our `Plausible CE` server is being executed),
+you will see that it recorded the site's very first page view!
+
+<p align="center">
+    <img width="700" src="https://github.com/user-attachments/assets/677e1de1-11c9-4525-a155-0f9de59f019b">
+</p>
+
+Awesome! 🎉
+This means we've correctly integrated `Plausible` in our simple site!
+
+
+## 3. (*Optional*) Monitoring a `Next.js` website
+
+> [!NOTE]
+>
+> This section *is optional*,
+> as it will be focussing on setting up integration
+> in a `Next.js` app.
+>
+> To learn more about custom events,
+> feel free to skip to [4. Exploring custom events in `Plausible`](#4-exploring-custom-events-in-plausible).
 
 Now that we've our neat `Plausible CE` server instance
 running on our `http://localhost:8000`,
@@ -376,7 +461,7 @@ run it on our `localhost`
 and monitor it!
 
 
-### 2.1 Clone the `Next.js` site
+### 3.1 Clone the `Next.js` site
 
 Let's clone the website.
 Run the following command:
@@ -455,7 +540,7 @@ It seems to be working properly!
 Awesome! 🌈
 
 
-### 2.2 Using `next-plausible` to monitor website
+### 3.2 Using `next-plausible` to monitor website
 
 `Plausible` suggests you to add a `<script>` to the `<head>` of your site,
 which fetches the script used to send events to the `Plausible` server
@@ -480,7 +565,7 @@ pnpm add next-plausible
 Now, it's time to set it up!
 
 
-#### 2.2.1 Wrapping the application with `<PlausibleProvider>`
+#### 3.2.1 Wrapping the application with `<PlausibleProvider>`
 
 First, we need to wrap the whole `Next.js` application
 with `<PlausibleProvider>`.
@@ -574,7 +659,7 @@ You can check the rest of the possible props
 in https://github.com/4lejandrito/next-plausible#plausibleprovider-props.
 
 
-#### 2.2.2 Proxying the analytics script
+#### 3.2.2 Proxying the analytics script
 
 To avoid being blocked by adblockers,
 [`Plausible` recommends proxying the analytics script.](https://plausible.io/docs/proxy/introduction).
@@ -627,7 +712,7 @@ In our case, that's `http://localhost:8000`,
 the value we've defined in [1.1. Configuring `plausible-conf.env`](#11-configuring-plausible-confenv).
 
 
-#### 2.2.3 Running our `Next.js` app in `HTTPS`
+#### 3.2.3 Running our `Next.js` app in `HTTPS`
 
 When you were adding the website to monitor
 in the `Plausible CE` dashboard in section [1.3 Running it!](#13-running-it),
@@ -713,13 +798,13 @@ and we're sending a `pageview` event to it!
 </p>
 
 
-## 3. Exploring custom events in `Plausible`
+## 4. Exploring custom events in `Plausible`
 
 We're already gaining awesome insights!
 But we can go a little further.
 
 
-### 3.1 Sending custom events from `Next.js`
+### 4.1 Sending custom events from `Next.js`
 
 Let's shallowly explore what we can do with `Plausible`!
 With `next-plausible`,
@@ -825,7 +910,7 @@ Great job! 🥳
 Let's see what's on the other side 👀.
 
 
-### 3.2 Custom events insights in our self-hosted `Plausible` server
+### 4.2 Custom events insights in our self-hosted `Plausible` server
 
 Our `Plausible` server is receiving these events.
 However, how do we see them?
@@ -867,7 +952,7 @@ But wait ✋!
 We ain't done yet 😉!
 
 
-### 3.3 Seeing custom events' props in `Plausible` dashboard
+### 4.3 Seeing custom events' props in `Plausible` dashboard
 
 Remember when we sent the `customEventName` with props
 in [3.1 Sending custom events from `Next.js`](#31-sending-custom-events-from-nextjs)?
@@ -936,6 +1021,4 @@ The possibilities are endless! ✨
 
 
 
-## 4. Deploying to `fly.io`
 
-TODO
