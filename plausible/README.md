@@ -25,6 +25,9 @@
   - [5. Deploying to `fly.io`](#5-deploying-to-flyio)
     - [4.1 Clone the template](#41-clone-the-template)
     - [4.2 Setting up `clickhouse`](#42-setting-up-clickhouse)
+    - [4.3 Setting up `plausible`](#43-setting-up-plausible)
+      - [4.3.1 Creating `.env` file](#431-creating-env-file)
+      - [4.3.2 Creating, migrating and initializing database](#432-creating-migrating-and-initializing-database)
 
 
 
@@ -188,8 +191,8 @@ TOTP_VAULT_KEY=replace-me
 
 To generate `SECRET_KEY_BASE`
 (which configures the secret used for sessions in the dashboards),
-we'll generate a key using [`OpenSSL`](https://www.openssl.org/).
-
+we'll generate a key using [``](https://www.openssl.org/).
+OpenSSL
 ```sh
 openssl rand -base64 48
 ```
@@ -1020,5 +1023,302 @@ and what you need to focus on to increase engagement.
 The possibilities are endless! ✨
 
 
+## 5. Deploying to `fly.io`
+
+We've everything working on `localhost`.
+
+But `Plausible CE` shines when it's published
+somewhere that's *publicly accessible*.
+
+In this section,
+we'll be focusing on deploying our self-hosted `Plausible CE` instance
+to [`fly.io`](https://fly.io/).
+
+> [!NOTE]
+>
+> If this is your first time using `fly.io`,
+> we *highly recommend* you read 
+> their [`Fly.io Essentials`](https://fly.io/docs/getting-started/essentials/) docs.
+
+There are resources online that give us a rundown
+of how to get `Plausible CE` hosted in `fly.io`,
+namely:
+
+- https://blog.liallen.me/self-host-plausible-with-fly
+- https://iagocavalcante.com/articles/how-to-deploy-plausible-analytics-at-fly-io
+
+We'll be building [on top of these tutorials](https://en.wikipedia.org/wiki/Standing_on_the_shoulders_of_giants)
+so as to not "reinvent the wheel"
+and expedite this process.
 
 
+### 4.1 Clone the template
+
+We'll use https://github.com/intever/plausible-hosting
+to kickstart the process of publishing to `fly.io`.
+
+Let's clone it.
+
+```sh
+git clone https://github.com/intever/plausible-hosting.git flyio_deploy
+```
+
+You should see a folder called `flyio_deploy` in your computer now.
+If you navigate into it,
+you should notice that we've a folder dedicated
+to `clickhouse` and another for `plausible`.
+
+Let's start with the former.
+Before starting, though,
+you need to [create an organization in `fly.io`](https://fly.io/docs/flyctl/orgs/).
+
+
+### 4.2 Setting up `clickhouse`
+
+Navigate to the `clickhouse` folder
+(`cd clickhouse`).
+We'll create our fly app by running the following command:
+
+```sh
+fly launch --no-deploy --org <ORG_NAME>
+```
+
+Follow the instructions.
+We'll be calling this app
+**"plausible-ce-clickhouse"**.
+
+After confirming the changes,
+let's create a volume to persist files
+([fly machines are ephemeral](https://community.fly.io/t/ephemeral-fly-machine/6965)).
+Run the following command:
+
+```sh
+fly volumes create plausible_clickhouse_data --region mad --size 1
+
+Warning! Every volume is pinned to a specific physical host. You should create two or more volumes per application to avoid downtime. Learn more at https://fly.io/docs/volumes/overview/
+? Do you still want to use the volumes feature? Yes
+                  ID: vol_XXXXXXXXXXXXXXXXX
+                Name: plausible_clickhouse_data
+                 App: plausible-ce-clickhouse
+              Region: mad
+                Zone: e024
+             Size GB: 1
+           Encrypted: true
+          Created at: 12 Aug 24 12:00 UTC
+  Snapshot retention: 5
+ Scheduled snapshots: true
+```
+
+After creating the volume successfully,
+we can now deploy our `Clickhouse` app!
+Simply run:
+
+```sh
+fly deploy
+```
+
+And we're done with `Clickhouse`!
+
+
+### 4.3 Setting up `plausible`
+
+Now let's head over to the `Plausible` folder.
+
+```sh
+cd ../plausible
+```
+
+We're going to follow the same steps,
+as we've previously done with `clickhouse`.
+First, launch the app with `fly`.
+
+```sh
+fly launch --no-deploy --org <ORG_NAME>
+```
+
+Follow the prompts.
+When prompted with
+`? Do you want to tweak these settings before proceeding?`,
+type `Y`.
+This will open a browser.
+Scroll down to the Database section, and set it to the following settings.
+
+<p align="center">
+    <img width="700" src="https://github.com/user-attachments/assets/ae651b7a-2ef3-49e4-a396-05b2a8ae33bb">
+</p>
+
+At the end,
+save the changes.
+- our `PostgreSQL` database is called **`"plausible-ce-db"`**.
+- our app name is called **`"plausible-ce-app"`**.
+
+After saving,
+`fly.io` will start provisioning machines for the `PostgreSQL` database.
+After this,
+it will give you a `DATABASE_URL` secret,
+which is added to the app we're deploying.
+
+```sh
+Waiting for launch data... Done
+Created app 'plausible-ce-app' in organization 'dwyl-atm'
+Admin URL: https://fly.io/apps/plausible-ce-app
+Hostname: plausible-ce-app.fly.dev
+Creating postgres cluster in organization dwyl-atm
+Creating app...
+Setting secrets on app plausible-ce-db...
+Provisioning 1 of 1 machines with image flyio/postgres-flex:16.3@sha256:30a323ca2e2c0fa12b241d9be2fa5603bf2033e371c59f0e2a6176637ff0c4d0
+Waiting for machine to start...
+Machine 17815deefe14e8 is created
+==> Monitoring health checks
+  Waiting for 17815deefe14e8 to become healthy (started, 3/3)
+
+Postgres cluster plausible-ce-db created
+  Username:    postgres
+  Password:    password
+  Hostname:    plausible-ce-db.internal
+  Flycast:     fdaa:2:792f:0:1::3
+  Proxy port:  5432
+  Postgres port:  5433
+  Connection string: postgres://postgres:twJ3Q7r6gWDIMFy@plausible-ce-db.flycast:5432
+
+Save your credentials in a secure place -- you won't be able to see them again!
+
+Connect to postgres
+Any app within the dwyl-atm organization can connect to this Postgres using the above connection string
+
+Now that you've set up Postgres, here's what you need to understand: https://fly.io/docs/postgres/getting-started/what-you-should-know/
+Checking for existing attachments
+Registering attachment
+Creating database
+Creating user
+
+Postgres cluster plausible-ce-db is now attached to plausible-ce-app
+The following secret was added to plausible-ce-app:
+  DATABASE_URL=<DATABASE_URL>
+Postgres cluster plausible-ce-db is now attached to plausible-ce-app
+Wrote config file fly.toml
+Validating /Users/lucho/Documents/dwyl/learn-analytics/plausible/flyio_deploy/plausible/fly.toml
+✓ Configuration is valid
+Your app is ready! Deploy with `flyctl deploy`
+```
+
+You'll see that the `fly.toml` has been updated
+with the settings you've defined.
+Open it and change the `CLICKHOUSE_DATABASE_URL`
+to the URL we've deployed in the previous section
+[4.2 Setting up `clickhouse`](#42-setting-up-clickhouse).
+Like so:
+
+```sh
+[env]
+  CLICKHOUSE_DATABASE_URL = 'http://plausible-ce-clickhouse.internal:8123/plausible_dev'
+```
+
+#### 4.3.1 Creating `.env` file
+
+Let's create an `.env` file
+with the configuration needed to start up our `Plausible` instance.
+This the same configuration discussed in [1.1. Configuring `plausible-conf.env`](#11-configuring-plausible-confenv).
+
+In the same folder (inside `plausible`),
+create a file called `.env`:
+
+```sh
+SECRET_KEY_BASE=your_secret_key
+ADMIN_USER_NAME=Your_Name
+ADMIN_USER_EMAIL=your_email@example.com
+ADMIN_USER_PWD=generated_password
+BASE_URL=https://yourdomain.com
+DISABLE_REGISTRATION=true
+```
+
+Fill the values accordingly.
+We are leaving [`DISABLE_REGISTRATION`](https://github.com/plausible/community-edition#registration)
+as `invite_only` so it restricts registration of new people to us.
+The `BASE_URL` can be pointed to the domain
+of the `fly.io` machine that is being deployed.
+You can find it in your organization dashboard,
+and clicking on the app name.
+
+*We are going to use this `.env` file to set the secrets in our `fly.io` app.*
+Let's set these secrets now.
+
+```sh
+fly secrets import < .env
+Secrets are staged for the first deployment
+```
+
+#### 4.3.2 Creating, migrating and initializing database
+
+We're super close to deploying our `Plausible CE` service
+with a `PostgreSQL`!
+We need to make *one final change* to our `fly.toml`
+(inside `/plausible`).
+Change the `release_command` from `db migrate` to **`db createdb`**.
+
+```toml
+[deploy]
+  release_command = 'db createdb'
+```
+
+Now we can finally deploy!
+
+```sh
+fly deploy
+```
+
+> [!NOTE]
+>
+> Your release command may not succeed at first.
+> This is probably because your `clickhouse` app is not running.
+> Wake it up before deploying by visiting its URL.
+>
+> Another alternative is making sure that the `clickhouse` app is always running.
+> Because `plausible` needs both the `PostgreSQL` and `Clickhouse` apps to be running,
+> you can go to the `clickhouse/fly.toml` file and make sure that a machine is always on
+> by changing the `[http_service]` section.
+>
+> ```toml
+> auto_stop_machines = 'off'
+> auto_start_machines = true
+> min_machines_running = 1
+> ```
+>
+> Because we only have 3 apps in the lowest tier,
+> this should be free.
+> However, check https://fly.io/docs/about/pricing/#free-allowances for more information about pricing.
+
+The release command may succeed, but the machine might not be healthy.
+This is where we change the `release_command` from `db createdb` to **`db migrate`**.
+
+Deploy again.
+
+```sh
+fly deploy
+```
+
+Finally, change the `release_command` from `db migrate` to **`db init-admin`**.
+
+Deploy again.
+
+```sh
+fly deploy
+```
+
+And that's it!
+Revert the `release_command` to `db migrate` and leave it as it is.
+
+> [!IMPORTANT]
+>
+> The sequence of commands that should be executed should be:
+> **`db createdb`** -> **`db migrate`** -> **`db init-admin`**.
+
+And that's it!
+If you visit the `Plausible` app that we've just created
+at `https://<app_name>.fly.dev/`
+(in our case, it was https://plausible-ce-app.fly.dev/),
+you will see the self-hosted `Plausible CE` in all its glory!
+
+<p align="center">
+    <img width="700" src="https://github.com/user-attachments/assets/2a4f186d-d8d8-4237-95f7-08beac307202">
+</p>

@@ -1,7 +1,7 @@
 > [!IMPORTANT]
 >
 > Credits of this folder go to https://github.com/intever/plausible-hosting.
-> We've made some small changes to the repository to tailor to our needs.
+> We've made some small changes to the `fly.toml` files to tailor to our needs and our tutorial.
 > However, most of the legwork was made by https://github.com/intever,
 > so full credits go to them!
 >
