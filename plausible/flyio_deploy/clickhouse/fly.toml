@@ -1,4 +1,4 @@
-# fly.toml app configuration file generated for plausible-ce-clickhouse on 2024-08-12T16:17:13+01:00
+# fly.toml app configuration file generated for plausible-ce-clickhouse on 2024-08-13T19:36:53+01:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
@@ -22,7 +22,7 @@ kill_timeout = '5s'
   force_https = true
   auto_stop_machines = 'off'
   auto_start_machines = true
-  min_machines_running = 1        # this is needed for the `plausible` app to work
+  min_machines_running = 1
   processes = ['app']
 
 [[vm]]

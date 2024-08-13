@@ -4,8 +4,6 @@
 > We've made some small changes to the `fly.toml` files to tailor to our needs and our tutorial.
 > However, most of the legwork was made by https://github.com/intever,
 > so full credits go to them!
->
-> See [README]
 
 # Self Hosting [Plausible](https://plausible.io/docs/self-hosting) on [Fly.io](https://fly.io/)
 

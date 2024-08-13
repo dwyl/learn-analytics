@@ -1,4 +1,4 @@
-# fly.toml app configuration file generated for plausible-ce-app on 2024-08-12T16:30:08+01:00
+# fly.toml app configuration file generated for plausible-ce-app on 2024-08-13T19:41:30+01:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
@@ -14,10 +14,9 @@ kill_timeout = '5s'
 [build]
 
 [deploy]
-  release_command = 'db migrate'
+  release_command = 'db createdb'
 
 [env]
-  CLICKHOUSE_DATABASE_URL = 'http://plausible-ce-clickhouse.internal:8123/plausible_dev'
   ECTO_IPV6 = 'true'
   LISTEN_IP = '::'
 

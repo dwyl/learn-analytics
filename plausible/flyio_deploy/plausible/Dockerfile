@@ -1,2 +1,1 @@
-# https://github.com/plausible/analytics/blob/master/Dockerfile
-FROM plausible/analytics:v1.5
+FROM plausible/analytics:v2.0.0
