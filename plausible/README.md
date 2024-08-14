@@ -1520,6 +1520,9 @@ This means that the first person to create the account after deploying
 You can set this to `invite_only`,
 so only invited people can register.
 
+To invite other people,
+check https://plausible.io/docs/users-roles.
+
 > [!IMPORTANT]
 >
 > With the IP address of your Droplet,
