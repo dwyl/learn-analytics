@@ -32,6 +32,7 @@
   - [6. Deploying to `DigitalOcean` Droplet](#6-deploying-to-digitalocean-droplet)
     - [6.1 Create a `Droplet` instance](#61-create-a-droplet-instance)
     - [6.2 Connecting to the `Droplet` through `SSH`](#62-connecting-to-the-droplet-through-ssh)
+    - [6.3 Cloning and getting `Plausible` running in our `Droplet`](#63-cloning-and-getting-plausible-running-in-our-droplet)
 
 
 
@@ -1481,6 +1482,98 @@ Click it and a terminal will be opened in a new browser window.
 
 Awesome!
 We're in 👨‍💻.
+
+
+### 6.3 Cloning and getting `Plausible` running in our `Droplet`
+
+Now that you're inside your Droplet instance,
+let's clone the `Plausible CE` repo!
+
+```sh
+git clone https://github.com/plausible/community-edition.git plausible
+```
+
+This will create a folder called `plausible`.
+Navigate into it (`cd plausible`).
+
+From now on, we just need to follow the same instructions
+that we've done in [1. Getting `Plausible CE` running on your `localhost`](#1-getting-plausible-ce-running-on-your-localhost).
+You can also [follow the quick start of the official repo](https://github.com/plausible/community-edition#quick-start)
+(which are the same as we previously done, but may be more up-to-date, so it's recommended).
+
+So, change the `plausible-conf.env`.
+
+```sh
+BASE_URL=replace-me
+SECRET_KEY_BASE=replace-me
+TOTP_VAULT_KEY=replace-me
+DISABLE_REGISTRATION=true
+```
+
+You can check all the env variables you can add to the config
+[in the official repo](https://github.com/plausible/community-edition#required).
+By default, the [`DISABLE_REGISTRATION`](https://github.com/plausible/community-edition#disable_registration)
+env variable (which restricts registration of new people)
+is set to `true` by default.
+This means that the first person to create the account after deploying
+**is the only one that can login from then on**.
+You can set this to `invite_only`,
+so only invited people can register.
+
+> [!IMPORTANT]
+>
+> With the IP address of your Droplet,
+> you need to go to your domain and add it to the DNS records.
+> Here's an example done in `Cloudflare`:
+>
+> <p align="center">
+>     <img width="700" src="https://github.com/user-attachments/assets/548f1b12-0634-4e3b-8a32-9ff50646cf6a">
+> </p>
+>
+> See that the IP address is the same as our Droplet's.
+>
+> <p align="center">
+>     <img width="700" src="https://github.com/user-attachments/assets/42896765-08b0-480a-8232-b6a4c5e59517">
+> </p>
+
+As you know, by default, a reverse proxy is set up for us
+(we change the settings in `reverse-proxy/docker-compose.caddy-gen.yml`).
+Just make sure it matches the domain you wish to deploy to
+and that you set in the `BASE_URL` in `plausible-conf.env`.
+
+After that, you can simply launch it!
+
+```sh
+docker compose -f docker-compose.yml -f reverse-proxy/docker-compose.caddy-gen.yml up -d
+```
+
+Wait for everything to set up.
+You can now visit the website and you should see the registration page!
+
+Well done! 🎉
+
+> [!NOTE]
+>
+> Depending on the Droplet that you chose,
+> you may have some problems with weaker ones.
+> For example, if you wanted to add
+> [geolocation MMDB](https://github.com/plausible/community-edition#ip-geolocation)
+> to your `Plausible` instance,
+> you Docker containers may have trouble starting
+> (see https://github.com/plausible/analytics/discussions/3607).
+>
+> In these cases, check `docker compose logs`
+> and see [`Plausible`'s Github Discussions](https://github.com/plausible/analytics/discussions/categories/self-hosted-support)
+> to see if someone had the same issue as you.
+> In the link above,
+> it was because the person needed a `Droplet` with more `RAM` 😉.
+
+> [!NOTE]
+>
+> If you want to access the `Plausible`, or `ClickHouse`
+> or `PostgreSQL` instances in your terminal inside the `Droplet`,
+> check the commands in https://github.com/plausible/community-edition#faq.
+
 
 
 
