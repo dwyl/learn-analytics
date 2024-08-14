@@ -30,6 +30,8 @@
       - [4.3.1 Creating `.env` file](#431-creating-env-file)
       - [4.3.2 Creating, migrating and initializing database](#432-creating-migrating-and-initializing-database)
   - [6. Deploying to `DigitalOcean` Droplet](#6-deploying-to-digitalocean-droplet)
+    - [6.1 Create a `Droplet` instance](#61-create-a-droplet-instance)
+    - [6.2 Connecting to the `Droplet` through `SSH`](#62-connecting-to-the-droplet-through-ssh)
 
 
 
@@ -1052,7 +1054,16 @@ The possibilities are endless! ✨
 >
 > Our files are more up-to-date than the ones used in the aforementioned resources
 > but the process is the same.
-
+> Check the following links for more context on what's happening
+> (they may have new information after the time of writing):
+> - https://github.com/plausible/analytics/issues/2900
+> - https://github.com/plausible/analytics/issues/405
+> - https://github.com/plausible/analytics/discussions/1336
+> - https://github.com/plausible/analytics/discussions/4268
+> - https://github.com/plausible/analytics/discussions/4232
+> - https://github.com/plausible/analytics/discussions/3729
+> - https://github.com/plausible/analytics/discussions/3070
+> - https://github.com/plausible/analytics/discussions/1192
 
 We've everything working on `localhost`.
 
@@ -1342,3 +1353,135 @@ you will see the self-hosted `Plausible CE` in all its glory!
 
 
 ## 6. Deploying to `DigitalOcean` Droplet
+
+Deploying to `DigitalOcean` is easy.
+We just need to:
+- boot up a [`Droplet` virtual machine](https://www.digitalocean.com/products/droplets) with `Docker` installed.
+- have a domain so the `Droplet` has a hostname.
+- `ssh` into the machine and `git clone` the https://github.com/plausible/community-edition
+repo into it.
+- follow the steps we did in [1. Getting `Plausible CE` running on your `localhost`](#1-getting-plausible-ce-running-on-your-localhost)
+to get it running.
+
+This section will be easy because, luckily,
+`DigitalOcean` already provides some guides for us to do this.
+So instead of re-writing their guides,
+we'll guide you through the whole process
+while referencing specifics to their links.
+
+You need to have an account on `DigitalOcean`,
+so make sure you create an account.
+
+Ready to get started?
+Let's go! 🏃🏻‍♀️
+
+
+### 6.1 Create a `Droplet` instance
+
+> [!TIP]
+>
+> Follow the guide in https://www.digitalocean.com/community/tutorials/how-to-use-the-docker-1-click-install-on-digitalocean
+> to get the full process in more detail.
+
+We first need a `Droplet` instance
+to host our `Plausible` application.
+We want our `Droplet` to **to have `Docker`**
+so we can run the `Docker` images inside the virtual machine
+(much like we did in our `localhost` before).
+
+Go to https://marketplace.digitalocean.com/apps/docker
+and click on `Create Docker Droplet`.
+
+<p align="center">
+    <img width="700" src="https://github.com/user-attachments/assets/7cdd9c55-ed0b-4b6c-bf98-0dd448b6a8da">
+</p>
+
+Inside `Marketplace`, choose the `Docker on Ubuntu` image.
+
+<p align="center">
+    <img width="700" src="https://github.com/user-attachments/assets/933f266e-21d0-496b-926f-4753c79f9c3e">
+</p>
+
+After clicking, you can accept some of the defaults.
+However, make sure you set these changes:
+- choose a datacenter region close to you.
+- choose a plan.
+If you want to go *lowcost*,
+we recommend going as low as `1GB` of `RAM`.
+This will cost you `$6` per month
+(at the time of writing).
+- choose an authentication method.
+We recommend going with `SSH Key`, it's safer.
+The process is simple, follow the steps in https://www.digitalocean.com/community/tutorials/how-to-configure-ssh-key-based-authentication-on-a-linux-server.
+This will you to access the virtual machine from your own computer easily!
+- choose an identifying name.
+We've named ours `"dwyl-plausible"`.
+
+<p align="center">
+  <img width="32%" src="https://github.com/user-attachments/assets/b980690a-bd6d-4415-85d1-525ca4cc7b49">
+  <img width="32%" src="https://github.com/user-attachments/assets/221c358b-780d-4805-ac5b-24e5402530ec">
+  <img width="32%" src="https://github.com/user-attachments/assets/320941de-032b-4de8-875f-8350c8062614">
+</p>
+
+After this, click on `Create Droplet`.
+You will be redirected to your project's page
+with the `Droplet` being created with a loading bar.
+After it's finished,
+you'll have access to the IP address other configurations of the `Droplet` you've just created.
+
+<p align="center">
+  <img width="45%" src="https://github.com/user-attachments/assets/de7b4888-6bd4-489e-b6e2-58965222157b">
+  <img width="45%" src="https://github.com/user-attachments/assets/968181f1-c459-42fd-ba88-279a9ee92735">
+</p>
+
+If you hover the IP address, you can copy it to your clipboard.
+This is going to be useful for the next step,
+
+
+### 6.2 Connecting to the `Droplet` through `SSH`
+
+> [!TIP]
+>
+> If you've never connected to a virtual machine through `SSH`
+> and/or want to a more detailed guide on how to connect to the `Droplet`,
+> visit https://docs.digitalocean.com/products/droplets/how-to/connect-with-ssh/
+
+Once you've spun up your Docker Droplet,
+you will need to connect to it through `SSH`.
+You can do that from the command line.
+
+Follow the link above to create an `SSH` key,
+and connect to it.
+Use the server IP you've copied in the previous section.
+
+```sh
+ssh root@<SERVER_IP_YOU_COPIED>
+```
+
+Alternatively,
+you can connect to the virtual machine in your `Droplet` page online.
+Go to the dashboard in `DigitalOcean`.
+
+<p align="center">
+    <img width="700" src="https://github.com/user-attachments/assets/740b68c8-3426-4831-995b-80ef3d6fd779">
+</p>
+
+And expand the Droplet you've just created.
+You will see that there's a `Console` button to the right.
+
+<p align="center">
+    <img width="700" src="https://github.com/user-attachments/assets/803f4e6e-7357-41d0-b42f-32bbadbf87fa">
+</p>
+
+Click it and a terminal will be opened in a new browser window.
+
+<p align="center">
+    <img width="700" src="https://github.com/user-attachments/assets/c0797c9a-eef2-4661-8fb1-182298454641">
+</p>
+
+Awesome!
+We're in 👨‍💻.
+
+
+
+
