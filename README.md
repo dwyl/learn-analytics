@@ -120,6 +120,7 @@ Any `Plausible`-related information can be found in the [`plausible`](./plausibl
 where you can get quickly get started on setting up a `Plausible CE` instance
 and a `Next.js` website,
 both on `localhost`.
+You'll also learn how to deploy `Plausible` to `DigitalOcean`!
 
 
 [![HitCount](https://hits.dwyl.com/dwyl/learn-analytics.svg?style=flat-square)](http://hits.dwyl.com/dwyl/learn-analytics)
