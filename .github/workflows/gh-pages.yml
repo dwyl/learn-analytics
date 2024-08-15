@@ -36,8 +36,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
-          path: './plausible/simple_website.html'
+          path: './plausible/simple_website/'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
