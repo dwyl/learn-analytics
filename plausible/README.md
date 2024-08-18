@@ -1652,7 +1652,7 @@ they will give you the private SSH key
 that you need to download to your machine.
 
 <p align="center">
-    <img width="700" src="ttps://github.com/user-attachments/assets/9dcb27df-941e-4e7d-8b3f-bb22ac349bd4">
+    <img width="700" src="https://github.com/user-attachments/assets/9dcb27df-941e-4e7d-8b3f-bb22ac349bd4">
 </p>
 
 After this,
