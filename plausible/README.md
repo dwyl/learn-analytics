@@ -33,6 +33,15 @@
     - [6.1 Create a `Droplet` instance](#61-create-a-droplet-instance)
     - [6.2 Connecting to the `Droplet` through `SSH`](#62-connecting-to-the-droplet-through-ssh)
     - [6.3 Cloning and getting `Plausible` running in our `Droplet`](#63-cloning-and-getting-plausible-running-in-our-droplet)
+  - [7. Deploying to `Azure`](#7-deploying-to-azure)
+    - [7.1 Create a virtual machine](#71-create-a-virtual-machine)
+      - [7.1.1 Access Linux VM through `SSH`](#711-access-linux-vm-through-ssh)
+      - [(Optional) 7.1.2 Setting up the VM to be accessible by SSH in a Windows VM](#optional-712-setting-up-the-vm-to-be-accessible-by-ssh-in-a-windows-vm)
+        - [7.1.2.1 Add our IP address to `SSH` rule](#7121-add-our-ip-address-to-ssh-rule)
+        - [7.1.2.2 Connect to the machine through SSH](#7122-connect-to-the-machine-through-ssh)
+    - [7.2 Clone `Plausible CE`'s repo and set it up](#72-clone-plausible-ces-repo-and-set-it-up)
+      - [7.2.1 Installing `Docker` in our Linux VM](#721-installing-docker-in-our-linux-vm)
+    - [7.3 Running it!](#73-running-it)
 
 
 
@@ -1578,6 +1587,393 @@ Well done! 🎉
 > check the commands in https://github.com/plausible/community-edition#faq.
 
 
+## 7. Deploying to `Azure`
+
+You may prefer deploying to **`Azure`**,
+either because you've already an account there
+or because your company requires you to.
+
+Similarly to [6. Deploying to `DigitalOcean` Droplet](#6-deploying-to-digitalocean-droplet),
+we'll be using a *virtual machine* to deploy Plausible online.
+
+To follow this section,
+we assume you have an [Azure](https://azure.microsoft.com/en-us) account.
+With a brand new account,
+you should be able to create a virtual machine for free
+and run it for 750 hours.
+However, do be aware that billing may occur
+since Microsoft regularly updates their T&C.
+For more information about the free services provided by Azure,
+refer to https://azure.microsoft.com/en-us/pricing/free-services.
 
 
+### 7.1 Create a virtual machine
 
+Let's start by creating a virtual machine.
+Navigate to https://portal.azure.com/#view/Microsoft_Azure_Billing/FreeServicesBlade
+to see the free services we've got at our disposal.
+
+<p align="center">
+    <img width="700" src="https://github.com/user-attachments/assets/4e39e869-499a-41d6-8996-774803434d5c">
+</p>
+
+Head over to the **Linux Virtual Machine** pane
+and click on "Create".
+
+You will then be prompted to create the virtual machine.
+By default,
+all the presets will be set to the free services tier.
+Choose the region closest to you
+and give an appropriate name to your VM.
+We're going to be accessing our VM through SSH,
+so make sure to create a new key pair.
+
+Additionally,
+set your administrator account credentials
+and open the **`SSH (22)`**, **`HTTP (80)`**, **`HTTPS (433)`** ports.
+
+<p align="center">
+    <img width="45%" src="https://github.com/user-attachments/assets/8ec340c8-3ab2-466e-8334-cc1424506b15">
+    <img width="45%" src="https://github.com/user-attachments/assets/cc4be176-b433-49a7-a6ad-1b98681769f4">
+</p>
+
+Click on "Review + create".
+Azure will tell you the expected costs per hour.
+
+<p align="center">
+    <img width="700" src="https://github.com/user-attachments/assets/6e9c12a1-86ba-4b8b-9004-93987d171404">
+</p>
+
+Verify the information
+and click on "Create".
+After this,
+they will give you the private SSH key
+(a `.perm` file) 
+that you need to download to your machine.
+
+<p align="center">
+    <img width="700" src="ttps://github.com/user-attachments/assets/9dcb27df-941e-4e7d-8b3f-bb22ac349bd4">
+</p>
+
+After this,
+the VM deployment process will commence.
+
+<p align="center">
+    <img width="700" src="https://github.com/user-attachments/assets/50c9ab58-d34b-4c90-b722-e0254659248c">
+</p>
+
+Wait a few moments.
+After the deployment is complete,
+you will be redirected to the dashboard of your newly created virtual machine!
+
+<p align="center">
+    <img width="700" src="https://github.com/user-attachments/assets/2e86e102-62ba-4516-a1c4-d908d0416b0a">
+</p>
+
+
+#### 7.1.1 Access Linux VM through `SSH`
+
+Awesome!
+Now let's connect to our VM through SSH
+and see if it works!
+
+With the `.perm` file we've downloaded upon the creation of this VM,
+run this command.
+
+```sh
+ssh -i <path to the .pem file> username@<ipaddress of the VM>
+```
+
+> [!NOTE]
+>
+> You can find the IP address of your VM
+> in its dashboard in Azure.
+
+> [!NOTE]
+>
+> Your terminal may show this error.
+> ```sh
+> @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+> @         WARNING: UNPROTECTED PRIVATE KEY FILE!          @
+> @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+> Permissions 0644 for 'PERM PATH' are too open.
+> It is required that your private key files are NOT accessible by others.
+> This private key will be ignored.
+> Load key "PERM PATH": bad permissions
+> plausible-user@137.116.217.44: Permission denied (publickey).
+> ```
+>
+> To fix this, you need to change the permissions of the file.
+>
+> ```sh
+> chmod 400 <path_to_perm_file>
+> 
+> After this, it should work! 😉
+
+
+#### (Optional) 7.1.2 Setting up the VM to be accessible by SSH in a Windows VM
+
+> [!NOTE]
+>
+> This section is relevant for you to set up your VM
+> if you chose a *Windows Virtual Machine* instead of a Linux Virtual machine.
+>
+> Feel free to skip it if you've created a Linux VM.
+
+We'll connect to our virtual machine via [SSH](https://www.cloudflare.com/en-gb/learning/access-management/what-is-ssh/).
+
+To do this, in a Windows VM,
+we'll first need to enable SSH in our virtual machine
+(see https://learn.microsoft.com/en-gb/azure/virtual-machines/windows/connect-ssh?tabs=azurecli for more information).
+You will need to have
+[`Azure CLI`](https://learn.microsoft.com/en-us/cli/azure/)
+installed.
+
+First, login to your Azure account through the CLI.
+
+```sh
+az login
+```
+
+Follow the instructions.
+After you're done, you should be logged in!
+
+Now, let's start by allow SSH access to our VM.
+Run the following command.
+This will deploy the SSH extension for your virtual machine.
+
+```sh
+az vm extension set --resource-group $myResourceGroup --vm-name $myVM --name WindowsOpenSSH --publisher Microsoft.Azure.OpenSSH --version 3.0
+```
+
+> [!NOTE]
+>
+> Change the `$myResourceGroup` and `$myVM` variables
+> to your VM details.
+> You can find them in the virtual machine dashboard
+> we've seen earlier.
+
+After the command executes,
+you should see an output similar to the following.
+
+```sh
+{
+  "autoUpgradeMinorVersion": true,
+  "enableAutomaticUpgrade": null,
+  "forceUpdateTag": null,
+  "id": "ID",
+  "instanceView": null,
+  "location": "westeurope",
+  "name": "WindowsOpenSSH",
+  "protectedSettings": null,
+  "protectedSettingsFromKeyVault": null,
+  "provisionAfterExtensions": null,
+  "provisioningState": "Succeeded",
+  "publisher": "Microsoft.Azure.OpenSSH",
+  "resourceGroup": "plausible-vm_group",
+  "settings": null,
+  "suppressFailures": null,
+  "tags": null,
+  "type": "Microsoft.Compute/virtualMachines/extensions",
+  "typeHandlerVersion": "3.0",
+  "typePropertiesType": "WindowsOpenSSH"
+}
+```
+
+Now, let's ensure the TCP port
+(by default, it's port `22`)
+is open to allow connectivity to the VM.
+We can do this by running this command:
+
+```sh
+az network nsg rule create -g $myResourceGroup --nsg-name $myNSG -n allow-SSH --priority 1000 --source-address-prefixes 208.130.28.4/32 --destination-port-ranges 22 --protocol TCP
+```
+
+> [!NOTE]
+>
+> Change the `$myResourceGroup` and `$myNSG` variables
+> to your VM details.
+> `NSG` stands for [Network Security Groups](https://learn.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview).
+> When you created your VM,
+> an `NSG` has been created for you
+> with the name **`{VM_NAME}-nsg`**.
+>
+> You can check your `NSG` in
+> https://portal.azure.com/#browse/Microsoft.Network%2FNetworkSecurityGroups.
+
+
+> [!IMPORTANT]
+>
+> The VM **must have a public IP address**.
+> You can check this on the "Overview" of the VM dashboard.
+> If it doesn't,
+> you need to [associate a public IP address to your VM](https://learn.microsoft.com/en-gb/azure/virtual-network/ip-services/associate-public-ip-address-vm?tabs=azure-portal).
+> Additionally, for us to connect through SSH,
+> the VM **must be running**.
+
+Great!
+
+Now,
+we need to **copy our machine's public SSH key to the virtual machine**.
+We can do this by running:
+
+```sh
+az vm run-command invoke -g $myResourceGroup -n $myVM --command-id RunPowerShellScript --scripts "MYPUBLICKEY | Add-Content 'C:\ProgramData\ssh\administrators_authorized_keys' -Encoding UTF8;icacls.exe 'C:\ProgramData\ssh\administrators_authorized_keys' /inheritance:r /grant 'Administrators:F' /grant 'SYSTEM:F'"
+```
+
+> [!NOTE]
+>
+> Change the `$myResourceGroup` and `$myVM` variables
+> to your VM details.
+> `NSG` stands for [Network Security Groups](https://learn.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview).
+> You can find them in the virtual machine dashboard.
+
+Let the command execute!
+Afterwards,
+your terminal should yield an output similar to the following.
+
+```sh
+{
+  "value": [
+    {
+      "code": "ComponentStatus/StdOut/succeeded",
+      "displayStatus": "Provisioning succeeded",
+      "level": "Info",
+      "message": "Successfully processed 0 files; Failed processing 1 files",
+      "time": null
+    },
+    {
+      "code": "ComponentStatus/StdErr/succeeded",
+      "displayStatus": "Provisioning succeeded",
+      "level": "Info",
+      "message": "SOME_MESSAGE",
+      "time": null
+    }
+  ]
+}
+```
+
+
+##### 7.1.2.1 Add our IP address to `SSH` rule
+
+Opening up TLS port 22 to our IP address.
+In your VM dashboard,
+check the left pane and go to "`Networking`" > "`Network Settings`".
+
+You will see that inside "Inbound port rules",
+we've created a rule `allow-SSH`
+(that we did before).
+Click on the name.
+
+<p align="center">
+    <img width="700" src="https://github.com/user-attachments/assets/40e84de6-5265-4208-bb04-083ac58c98fd">
+</p>
+
+And add your IP address to the "Source" input field.
+
+> [!NOTE]
+>
+> You can find your IP address by running the following command.
+>
+> ```sh
+> dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com
+> ```
+
+<p align="center">
+    <img width="700" src="https://github.com/user-attachments/assets/600b04e6-2527-4bbf-9566-7b9c5a7d1c97">
+</p>
+
+Click "Save".
+
+Now we are able to connect to the machine from our computer!
+
+
+##### 7.1.2.2 Connect to the machine through SSH
+
+Now that we've set everything up,
+let's connect ourselves to VM
+from the terminal!
+
+Run the following command in your terminal before connecting.
+
+```sh
+az config set extension.use_dynamic_install=yes_without_prompt
+```
+
+This is to allow the VM to install necessary extensions without asking you.
+This is because the next command will ask you to install an SSH extension.
+This way, we can bypass it.
+
+```sh
+az ssh vm  -g $myResourceGroup -n $myVM --local-user $myUsername
+```
+
+> [!NOTE]
+>
+> Use the username you set up when you created the virtual machine.
+
+It will ask you for the password of the user
+we've defined when we created the VM.
+
+> [!NOTE]
+>
+> If you forgot the username/password,
+> navigate from the left pane, click on `"Help"` > `"Reset password"`
+> and reset it!
+>
+> <p align="center">
+>     <img width="700" src="https://github.com/user-attachments/assets/2124e216-2a2d-408b-969f-3f72621565cc">
+> </p>
+
+Congratulations,
+you're logged in
+in your Windows Machine!
+
+
+### 7.2 Clone `Plausible CE`'s repo and set it up
+
+Now that we've access to the VM,
+let's set up our `Plausible` instance!
+
+To set up `Plausible`,
+please follow the exact same steps as outlined in
+[6.3 Cloning and getting `Plausible` running in our `Droplet`](#63-cloning-and-getting-plausible-running-in-our-droplet).
+Change your `plausible-conf.env`
+and `reverse-proxy/docker-compose.caddy-gen.yml`
+to match the IP address of the VM we've just created.
+
+
+#### 7.2.1 Installing `Docker` in our Linux VM
+
+We don't have Docker installed in our Linux Virtual Machine.
+So we need to install it,
+so we can run our `Plausible CE` configuration
+and deploy it!
+
+Because we're running on an `Ubuntu` machine,
+we recommend installing it using the `apt` repository.
+Follow the instructions in https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository.
+
+
+### 7.3 Running it!
+
+Now that we've everything we need
+(including Docker),
+we just need to run everything and deploy it!
+
+```sh
+sudo docker compose -f docker-compose.yml -f reverse-proxy/docker-compose.caddy-gen.yml up -d
+```
+
+After running this,
+let `Plausible` set up both databases
+and, after a few moments,
+you should be able to access the server!
+
+<p align="center">
+    <img width="700" src="https://github.com/user-attachments/assets/80d27402-3d1c-4cfb-bdff-85f4f46cece9">
+</p>
+
+Congratulations!
+You've successfully deployed your `Plausible` instance
+to Azure!! 🎉
