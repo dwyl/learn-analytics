@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePlausible } from 'next-plausible'
+import SearchInput from "./search";
 
 const navItems = {
   "/": {
@@ -50,6 +51,7 @@ export function Navbar() {
             Send event to Plausible!
           </button>
         </nav>
+        <SearchInput/>
       </div>
     </aside>
   );

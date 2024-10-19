@@ -9,8 +9,23 @@
 For more information about custom events in `Plausible`,
 check [`custom-events.md`](./custom-events.md).
 
+- [Exploring custom events in `Plausible` in `Next.js`](#exploring-custom-events-in-plausible-in-nextjs)
+  - [4.1 Custom events - full integration](#41-custom-events---full-integration)
+    - [4.1.1 Creating custom events from `Next.js`](#411-creating-custom-events-from-nextjs)
+    - [4.1.2 Custom events insights in our self-hosted `Plausible` server](#412-custom-events-insights-in-our-self-hosted-plausible-server)
+    - [4.1.3 Seeing custom events' props in `Plausible` dashboard](#413-seeing-custom-events-props-in-plausible-dashboard)
+  - [4.2 Custom events - practical examples](#42-custom-events---practical-examples)
+    - [4.2.1 Search custom event](#421-search-custom-event)
+    - [4.2.2 Page scroll depth](#422-page-scroll-depth)
+  - [4.3 Funnel analysis](#43-funnel-analysis)
 
-## 4.1 Sending custom events from `Next.js`
+## 4.1 Custom events - full integration
+
+Let's explore custom events in `Plausible`!
+
+### 4.1.1 Creating custom events from `Next.js`
+
+Sending custom events from `Next.js`
 
 Let's shallowly explore what we can do with `Plausible`!
 With `next-plausible`,
@@ -116,7 +131,7 @@ Great job! 🥳
 Let's see what's on the other side 👀.
 
 
-## 4.2 Custom events insights in our self-hosted `Plausible` server
+### 4.1.2 Custom events insights in our self-hosted `Plausible` server
 
 Our `Plausible` server is receiving these events.
 However, how do we see them?
@@ -158,7 +173,7 @@ But wait ✋!
 We ain't done yet 😉!
 
 
-## 4.3 Seeing custom events' props in `Plausible` dashboard
+### 4.1.3 Seeing custom events' props in `Plausible` dashboard
 
 Remember when we sent the `customEventName` with props
 in [3.1 Sending custom events from `Next.js`](#31-sending-custom-events-from-nextjs)?
@@ -225,3 +240,244 @@ and what you need to focus on to increase engagement.
 
 The possibilities are endless! ✨
 
+
+
+
+## 4.2 Custom events - practical examples
+
+Let's explore some practical examples of custom events.
+For both of the following examples,
+we are going to introduce a rudimentary session system
+to keep track of the person's session.
+
+> [!NOTE]
+>
+> You can find more informations about session management in `Next.js` 
+> in the [official documentation](https://nextjs.org/docs/app/building-your-application/authentication#session-management).
+
+We are going to be creating a **session ID**
+that will be stored in a cookie.
+This session ID will be sent with every custom event
+and will be used to track the user's session.
+A session will be considered as a user's visit to the website
+until they close the tab or browser.
+
+Let's start by installing two required packages:
+- [**`uuid`**](https://github.com/uuidjs/uuid),
+  a package that generates unique identifiers.
+- [**`js-cookie`**](https://github.com/js-cookie/js-cookie),
+  a package that allows us to work with cookies.
+
+Run the following command to install:
+
+```sh
+pnpm add js-cookie uuid
+```
+
+### 4.2.1 Search custom event
+
+Let's create a custom event for when a user searches for something on our website.
+We want to track the top searches that are being made
+on our website.
+
+Similarly to the below,
+to not clog the database,
+we shouldn't send a custom event at every type, even debouncing.
+Only when they click on the search button/press enter/click on result,
+we send the custom event.
+
+We are going to create a custom component called `Search.tsx`:
+Let's preemptively add it to `app/components/nav.tsx`'s return statement.
+
+```tsx
+import SearchInput from "./search";
+
+// ...
+
+  return (
+    <aside className="-ml-[8px] mb-16 tracking-tight">
+      <div className="lg:sticky lg:top-20">
+        <nav className="flex flex-row items-start relative px-0 pb-0 fade md:overflow-auto scroll-pr-6 md:relative" id="nav">
+          <div className="flex flex-row space-x-0 pr-10">
+            {Object.entries(navItems).map(([path, { name }]) => {
+              return (
+                <Link
+                  key={path}
+                  href={path}
+                  className="transition-all hover:text-neutral-800 dark:hover:text-neutral-200 flex align-middle relative py-1 px-2 m-1"
+                >
+                  {name}
+                </Link>
+              );
+            })}
+          </div>
+          <button
+            id="foo"
+            onClick={handleClick}
+          >
+            Send event to Plausible!
+          </button>
+        </nav>
+        <SearchInput/> // add this line
+      </div>
+    </aside>
+  );
+```
+
+Now let's create `<SearchInput>`!
+Create a file in `app/components/search.tsx`:
+
+```tsx
+import { usePlausible } from "next-plausible";
+import React, { useState, useCallback, useEffect } from "react";
+import Cookies from "js-cookie";
+import { v4 as uuidv4 } from "uuid";
+
+export default function SearchInput() {
+  const plausible = usePlausible();
+  const [searchValue, setSearchValue] = useState("");
+  const [sessionId, setSessionId] = useState("");
+
+  useEffect(() => {
+    // Check if a session ID already exists in cookies
+    let id = Cookies.get("sessionId");
+    if (!id) {
+      // Generate a new session ID if it doesn't exist
+      id = uuidv4();
+      // Set cookie to expire to 0 days. This means the cookie will be deleted when the browser is closed.
+      // See https://stackoverflow.com/questions/2537060/can-a-cookie-expire-when-either-some-time-passes-or-browser-is-closed
+      Cookies.set("sessionId", id, { expires: 0 }); 
+    }
+    setSessionId(id);
+  }, []);
+
+  // Handle form submission
+  const handleSubmit = useCallback(
+    (event) => {
+      event.preventDefault();
+      plausible("searchValue", {
+        props: {
+          value: searchValue || "",
+          sessionId: sessionId,
+        },
+      });
+    },
+    [searchValue, sessionId]
+  );
+
+  return (
+    <form className="max-w-md" onSubmit={handleSubmit}>
+      <label htmlFor="default-search" className="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white">
+        Search
+      </label>
+      <div className="relative">
+        <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+          <svg
+            className="w-4 h-4 text-gray-500 dark:text-gray-400"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 20 20"
+          >
+            <path
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
+            />
+          </svg>
+        </div>
+        <input
+          type="search"
+          id="default-search"
+          className="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          placeholder="Search for anything"
+          required
+          value={searchValue}
+          onChange={(e) => setSearchValue(e.target.value)}
+        />
+        <button
+          type="submit"
+          className="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+        >
+          Search
+        </button>
+      </div>
+    </form>
+  );
+}
+```
+
+- we **check for an existing session** id using 
+  the `useEffect` hook, 
+  checking if a session ID already exists in the cookies using `Cookies.get("sessionId")`.
+- we **generate a new session ID**.
+  If no session ID exists, we generate a new one using `uuidv4()`
+  and store it in the cookies using `Cookies.set("sessionId", id, { expires: 0 })`.
+  The `{ expires: 0 }` option sets the cookie to expire when the browser is closed.
+- we **store the session ID in the component** state using `setSessionId(id)`.
+- we **include the session ID in the custom event properties**
+  when the form is submitted using `plausible("searchValue", { props: { value: searchValue || "", sessionId: sessionId } })`.
+
+If you run the application (`sudo pnpm run dev`)
+with `Plausible` instance running on your `localhost` too,
+and type something in the search bar and click the search button,
+you will see a custom event being sent.
+
+<p align="center">
+    <img width="700" src="https://github.com/user-attachments/assets/2609ca1d-8cfc-49ba-936a-bae7bc1ee380">
+</p>
+
+If you go to `http://localhost:8000/localhost/settings/properties`
+(this assumes you've created a `localhost` website in your `Plausible` instance),
+you can set the properties of custom events on the dashboard.
+When `Plausible` receives custom events,
+it will automatically detect the properties sent with the event.
+
+<p align="center">
+    <img width="45%" src="https://github.com/user-attachments/assets/926a8972-2b4b-4d54-b3d6-d828fbfd2c12">
+    <img width="45%" src="https://github.com/user-attachments/assets/adffa503-2508-43bd-ae50-ec1a89655491">
+</p>
+
+Now, if you go back to the dashboard and scroll down to the end of the page,
+you'll be able to see information about the custom events that we're seeing
+under `properties`.
+We get a ranking of the most searched terms on our website!
+
+<p align="center">
+    <img width="700" src="https://github.com/user-attachments/assets/8596f10c-7b8f-4228-bf12-6b7864c3e10f">
+</p>
+
+That is not all.
+We can filter all the information we have on the dashboard
+by the properties we've defined.
+Scroll back up and on `Filter` and select on `Properties` and on the `value` prop
+we're passing in our custom event.
+
+<p align="center">
+    <img width="45%" src="https://github.com/user-attachments/assets/35d5ceb1-10e7-4cf2-994d-a02b82dae8fd">
+    <img width="45%" src="https://github.com/user-attachments/assets/96f89ac9-d954-4454-87b2-a89e8d5bb54f">
+</p>
+
+Now all of the dashboards are filtered by the `value` prop
+that contains a set of terms we've defined!
+
+<p align="center">
+    <img width="700" src="https://github.com/user-attachments/assets/bd1c064a-1b88-46b7-8d54-39f09a0f6372">
+</p>
+
+This will give us insights on what people are searching for on our website
+and what we should focus on to increase engagement.
+
+
+### 4.2.2 Page scroll depth
+
+Custom event called `WHATEVER` with `page name` and `depth` as props
+
+https://github.com/plausible/analytics/discussions/121
+
+
+
+## 4.3 Funnel analysis
+https://github.com/plausible/analytics/discussions/4639
