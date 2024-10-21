@@ -863,4 +863,12 @@ Give yourself a pat on the back!
 
 
 ## 4.3 Funnel analysis
-https://github.com/plausible/analytics/discussions/4639
+
+As of time of writing,
+`Plausible` does not support funnel analysis
+for CE (Community Edition) users.
+This feature is only available for Cloud users.
+
+However, Plausible is planning on releasing this feature for CE users in the future.
+Check https://github.com/plausible/analytics/discussions/4639
+for more information.
