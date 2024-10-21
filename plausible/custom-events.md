@@ -23,7 +23,6 @@ check [`custom-events.md`](./custom-events.md).
       - [4.2.2.4 Creating the new depth tracking components](#4224-creating-the-new-depth-tracking-components)
       - [4.2.2.5 Running the app](#4225-running-the-app)
       - [4.2.2.6 Visualizing in `Plausible`](#4226-visualizing-in-plausible)
-      - [4.2.2.7 Considerations of depth features](#4227-considerations-of-depth-features)
   - [4.3 Funnel analysis](#43-funnel-analysis)
 
 ## 4.1 Custom events - full integration
@@ -685,6 +684,7 @@ const ScrollDepthTracker = () => {
   const [maxDepth, setMaxDepth] = useState(0);
   const plausible = usePlausible();
   const [eventSent, setEventSent] = useState(false);
+  const [scrollTimeout, setScrollTimeout] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Ensure this code runs only on the client side
@@ -693,20 +693,32 @@ const ScrollDepthTracker = () => {
     const path = window.location.pathname;
 
     const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      const windowHeight = window.innerHeight;
-      const docHeight = document.documentElement.scrollHeight;
-      const totalScroll = (scrollTop + windowHeight) / docHeight;
-
-      const depth = Math.floor(totalScroll * 100 / 10) * 10; // Floor to nearest 10%
-
-      if (depth > maxDepth) {
-        setMaxDepth(depth);
+      // Clear the previous timeout if it exists
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
       }
+
+      // Set a new timeout to update the max depth after a delay
+      // This is a debounce to address the edge case where the user scrolls quickly
+      // and doesn't really read the content.
+      setScrollTimeout(
+        setTimeout(() => {
+          const scrollTop = window.scrollY;
+          const windowHeight = window.innerHeight;
+          const docHeight = document.documentElement.scrollHeight;
+          const totalScroll = (scrollTop + windowHeight) / docHeight;
+
+          const depth = Math.floor(totalScroll * 100 / 10) * 10; // Floor to nearest 10%
+
+          if (depth > maxDepth) {
+            setMaxDepth(depth);
+          }
+        }, 2000) // 2-second debounce
+      );
     };
 
     const sendEvent = () => {
-      if (!eventSent) {
+      if (!eventSent && maxDepth > 0) {
         plausible("scrollDepth", {
           props: {
             path: path,
@@ -724,8 +736,11 @@ const ScrollDepthTracker = () => {
     return () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("beforeunload", sendEvent);
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
     };
-  }, [maxDepth, eventSent, plausible]);
+  }, [maxDepth, eventSent, plausible, scrollTimeout]);
 
   return null;
 };
@@ -747,6 +762,25 @@ Let's go over what we've implemented:
     and add a filter which limits to `tag` values that contain `/some/page`.
     You will see this in action later in section [4.2.2.6 Visualizing in `Plausible`](#4226-visualizing-in-plausible).
 - we've removed the event listeners when the component is unmounted.
+
+In this file, we have some considerations
+that affected what we've implemented.
+We are addressing a few edge cases:
+
+- people can scroll up and down the page quickly scanning for something
+  in particular. 
+  Quickly scrolling down the page and back up is not relevant to us.
+  That's why we are **debouncing this behaviour**,
+  meaning that we are only setting the `maxDepth`
+  if the person stays for at least `2 seconds`
+  (we found this value appropriate,
+  you can always tweak this value).
+- no events are emitted for `0%`.
+  This metric is virtually the same as a page view.
+- the event is only sent whenever the page is unloaded.
+  Meaning that **only one event** is send,
+  right before the person either closes the page,
+  navigates to another or closes the browser.
 
 Now, let's create the `<ClientApplication>` component
 that is found in the `/pages/_app.tsx` file:
@@ -854,12 +888,6 @@ to get these insights!
 
 Give yourself a pat on the back! 
 🎉
-
-
-#### 4.2.2.7 Considerations of depth features
-
-
-
 
 
 ## 4.3 Funnel analysis

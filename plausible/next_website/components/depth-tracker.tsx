@@ -7,6 +7,7 @@ const ScrollDepthTracker = () => {
   const [maxDepth, setMaxDepth] = useState(0);
   const plausible = usePlausible();
   const [eventSent, setEventSent] = useState(false);
+  const [scrollTimeout, setScrollTimeout] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Ensure this code runs only on the client side
@@ -15,20 +16,32 @@ const ScrollDepthTracker = () => {
     const path = window.location.pathname;
 
     const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      const windowHeight = window.innerHeight;
-      const docHeight = document.documentElement.scrollHeight;
-      const totalScroll = (scrollTop + windowHeight) / docHeight;
-
-      const depth = Math.floor(totalScroll * 100 / 10) * 10; // Floor to nearest 10%
-
-      if (depth > maxDepth) {
-        setMaxDepth(depth);
+      // Clear the previous timeout if it exists
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
       }
+
+      // Set a new timeout to update the max depth after a delay
+      // This is a debounce to address the edge case where the user scrolls quickly
+      // and doesn't really read the content.
+      setScrollTimeout(
+        setTimeout(() => {
+          const scrollTop = window.scrollY;
+          const windowHeight = window.innerHeight;
+          const docHeight = document.documentElement.scrollHeight;
+          const totalScroll = (scrollTop + windowHeight) / docHeight;
+
+          const depth = Math.floor(totalScroll * 100 / 10) * 10; // Floor to nearest 10%
+
+          if (depth > maxDepth) {
+            setMaxDepth(depth);
+          }
+        }, 2000) // 2-second debounce
+      );
     };
 
     const sendEvent = () => {
-      if (!eventSent) {
+      if (!eventSent && maxDepth > 0) {
         plausible("scrollDepth", {
           props: {
             path: path,
@@ -46,8 +59,11 @@ const ScrollDepthTracker = () => {
     return () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("beforeunload", sendEvent);
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
     };
-  }, [maxDepth, eventSent, plausible]);
+  }, [maxDepth, eventSent, plausible, scrollTimeout]);
 
   return null;
 };
