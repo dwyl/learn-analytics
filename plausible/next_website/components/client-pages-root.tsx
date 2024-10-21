@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { ReactNode } from "react";
 import ScrollDepthTracker from "./depth-tracker";
 

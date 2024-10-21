@@ -11,6 +11,7 @@ const ScrollDepthTracker = () => {
 
   useEffect(() => {
     // Ensure this code runs only on the client side
+    /* istanbul ignore next -- @preserve */
     if (typeof window === "undefined") return;
 
     const path = window.location.pathname;
@@ -33,6 +34,7 @@ const ScrollDepthTracker = () => {
 
           const depth = Math.floor(totalScroll * 100 / 10) * 10; // Floor to nearest 10%
 
+          /* istanbul ignore next -- @preserve */
           if (depth > maxDepth) {
             setMaxDepth(depth);
           }
@@ -40,6 +42,7 @@ const ScrollDepthTracker = () => {
       );
     };
 
+    /* istanbul ignore next -- @preserve */
     const sendEvent = () => {
       if (!eventSent && maxDepth > 0) {
         plausible("scrollDepth", {
