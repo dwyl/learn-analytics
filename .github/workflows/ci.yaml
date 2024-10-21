@@ -28,8 +28,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
-        working-directory: plausible/next_website
 
       - name: Execute Unit tests
         run: pnpm run test
-        working-directory: plausible/next_website
