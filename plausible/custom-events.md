@@ -17,6 +17,13 @@ check [`custom-events.md`](./custom-events.md).
   - [4.2 Custom events - practical examples](#42-custom-events---practical-examples)
     - [4.2.1 Search custom event](#421-search-custom-event)
     - [4.2.2 Page scroll depth](#422-page-scroll-depth)
+      - [4.2.2.1 Why use both `pages` and `app` routers together](#4221-why-use-both-pages-and-app-routers-together)
+      - [4.2.2.2 Challenges with `layout.tsx` in App Router](#4222-challenges-with-layouttsx-in-app-router)
+      - [4.2.2.3 Restructure the project](#4223-restructure-the-project)
+      - [4.2.2.4 Creating the new depth tracking components](#4224-creating-the-new-depth-tracking-components)
+      - [4.2.2.5 Running the app](#4225-running-the-app)
+      - [4.2.2.6 Visualizing in `Plausible`](#4226-visualizing-in-plausible)
+      - [4.2.2.7 Considerations of depth features](#4227-considerations-of-depth-features)
   - [4.3 Funnel analysis](#43-funnel-analysis)
 
 ## 4.1 Custom events - full integration
@@ -473,9 +480,385 @@ and what we should focus on to increase engagement.
 
 ### 4.2.2 Page scroll depth
 
-Custom event called `WHATEVER` with `page name` and `depth` as props
+In this section, 
+we will discuss the implementation of page scroll depth tracking.
+This is a common metric used to understand user engagement on a website
+and can be used to identify the most engaging parts of a page.
 
-https://github.com/plausible/analytics/discussions/121
+This involves using both the 
+[`pages` and `app` routers](https://dev.to/dcs_ink/nextjs-app-router-vs-pages-router-3p57) together.
+We'll explain why this is necessary in a moment.
+
+#### 4.2.2.1 Why use both `pages` and `app` routers together
+
+In `Next.js`, 
+the **app directory** (`App Router`) introduces a new way to structure and manage routes, 
+while the **pages directory** (`Pages Router`) follows the traditional routing approach. 
+Using both routers together allows for a gradual migration 
+from the `Pages Router `to the `App Router` or a hybrid setup where different parts of the application can leverage the strengths of each router.
+
+One of the key reasons for using both routers together in this context **is the need for client components**. 
+Plausible requires client-side execution. 
+The App Router's layout component is not easily compatible this purpose
+(since App Router is by default a *server component*),
+ leading to the decision to use the Pages Router to easily add scroll depth tracking capabilities to all pages.
+
+We can declare client components within App Router pages
+by using the `"use client"` directive at the top of the file.
+But doing this for every page can be cumbersome.
+
+
+#### 4.2.2.2 Challenges with `layout.tsx` in App Router
+
+The [`layout.tsx` file in the App Router](https://nextjs.org/docs/app/building-your-application/routing/pages-and-layouts)
+allows us to define a layout that wraps around all pages.
+This is a great way to ensure consistent styling across all pages.
+
+Adding scroll depth tracking was attempted here.
+However, this approach faced several challenges:
+
+- **Hydration Errors**: 
+  Including `<html>`, `<head>`, and `<body>` tags in the layout component led to hydration errors 
+  because these tags are managed by `Next.js` and should not be included in the component.
+
+- **Client-Side Execution**:
+  The `window` object, which is required for scroll depth tracking, 
+  is only available on the client side. 
+  Ensuring that the code accessing the `window` object runs only on the client side was challenging within the `layout` component.
+
+To address these challenges, 
+the scroll depth tracking functionality was moved to the Pages Router, 
+allowing for easier integration and client-side execution.
+
+
+#### 4.2.2.3 Restructure the project
+
+Restructure the project to the following:
+
+```
+.
+├── app
+│   ├── layout.tsx
+│   ├── not-found.tsx
+│   ├── page.tsx
+│   ├── robots.ts
+│   ├── sitemap.ts
+│   ├── rss
+│   ├── blog
+│   └── og
+├── pages
+│   ├── _app.tsx
+│   ├── long-page.tsx
+├── components
+│   ├── nav.tsx
+│   ├── posts.tsx
+│   ├── search.tsx
+│   ├── mdx.tsx
+│   └── footer.tsx
+├── global.css
+```
+
+- we essentially maintain the blog and many pages
+  inside the `app` directory.
+- we move the components to a dedicated `components` directory.
+- we move hte `global.css` file to the root of the project.
+- we create a `pages` directory
+  and create a `_app.tsx` file inside it.
+
+
+Let's create the `pages/long-page.tsx` file:
+
+```tsx
+const LongPage = () => {
+  return (
+    <div>
+      <h1>Long Page for Scroll Testing</h1>
+      {Array.from({ length: 100 }, (_, i) => (
+        <p key={i}>
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+        </p>
+      ))}
+    </div>
+  );
+};
+
+export default LongPage;
+```
+
+This is a simple page.
+We're just adding a long page with 10 paragraphs
+of [`lorem ipsum` text](https://www.lipsum.com/).
+
+With this new page,
+we're going to add a `Link` to it in the `app/page.tsx`,
+which is the main page of our website.
+
+```tsx
+import { BlogPosts } from 'components/posts'
+import Link from 'next/link' // add this
+
+export default function Page() {
+  return (
+    <section>
+      
+      ...
+      
+      <Link
+        key={"long-page"}
+        className="flex flex-col space-y-1 mb-4"
+        href={`/long-page/`}
+      >
+        <div className="w-full flex flex-col md:flex-row space-x-0 md:space-x-2">
+          <p className="text-neutral-900 dark:text-neutral-100 tracking-tight">
+            Visit the "long-page" to check scroll depth custom event
+          </p>
+        </div>
+      </Link>
+    </section>
+  )
+}
+```
+
+Now, let's create the `pages/_app.tsx` file:
+
+```tsx
+// pages/_app.tsx
+import '../global.css'
+import type { AppProps } from 'next/app'
+import { Navbar } from '../components/nav'
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
+import Footer from '../components/footer'
+import PlausibleProvider from 'next-plausible'
+import ClientApplication from '../components/client-pages-root'
+
+const PagesApp = ({ Component, pageProps }: AppProps) => {
+  return (
+    <div
+      className={`text-black bg-white dark:text-white dark:bg-black`}
+    >
+      <PlausibleProvider domain="localhost" selfHosted trackLocalhost enabled />
+      <div className="antialiased max-w-xl mx-4 mt-8 lg:mx-auto">
+        <main className="flex-auto min-w-0 mt-6 flex flex-col px-2 md:px-0">
+          <Navbar />
+          <ClientApplication>
+            <Component {...pageProps} />
+          </ClientApplication>
+          <Footer />
+          <Analytics />
+          <SpeedInsights />
+        </main>
+      </div>
+    </div>
+  )
+}
+
+export default PagesApp
+```
+
+As you may have noticed,
+it's very similar to the `app/layout.tsx` file,
+albeit with a main difference:
+**we've added a `<ClientApplication>` component**.
+We will create this component in the next section.
+
+
+#### 4.2.2.4 Creating the new depth tracking components
+
+To implement scroll depth tracking,
+we are going to add a couple of new components.
+
+First one, is the **`ScrollDepthTracker` component**,
+which is responsible for tracking the maximum scroll depth and sending the data to Plausible.
+It uses the `useEffect` hook to add and remove event listeners for `scroll` and `beforeunload` events.
+The `window` object is accessed for scroll tracking.
+
+Create a new file `app/components/depth-tracker.tsx`:
+
+```tsx
+"use client";
+
+import { useEffect, useState } from "react";
+import { usePlausible } from "next-plausible";
+
+const ScrollDepthTracker = () => {
+  const [maxDepth, setMaxDepth] = useState(0);
+  const plausible = usePlausible();
+  const [eventSent, setEventSent] = useState(false);
+
+  useEffect(() => {
+    // Ensure this code runs only on the client side
+    if (typeof window === "undefined") return;
+
+    const path = window.location.pathname;
+
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const docHeight = document.documentElement.scrollHeight;
+      const totalScroll = (scrollTop + windowHeight) / docHeight;
+
+      const depth = Math.floor(totalScroll * 100 / 10) * 10; // Floor to nearest 10%
+
+      if (depth > maxDepth) {
+        setMaxDepth(depth);
+      }
+    };
+
+    const sendEvent = () => {
+      if (!eventSent) {
+        plausible("scrollDepth", {
+          props: {
+            path: path,
+            depth: `${maxDepth}%`,
+            tag: `${path}|${maxDepth}%`, // Combine path and depth into a tag
+          },
+        });
+        setEventSent(true);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("beforeunload", sendEvent);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("beforeunload", sendEvent);
+    };
+  }, [maxDepth, eventSent, plausible]);
+
+  return null;
+};
+
+export default ScrollDepthTracker;
+```
+
+Let's go over what we've implemented:
+
+- we've calculated the scroll depth as a percentage of the total scroll height.
+- we've sent a custom event **`scrollDepth`** to Plausible with:
+  - `path`, the path of the page.
+  - `depth`, a percentage of the scrolling depth. 
+  - `tag`, a combination of the path and depth.
+    This property is necessary to filter the data in the Plausible dashboard.
+    This is mostly because Plausible doesn't allow filtering by multiple properties
+    under a given path.
+    So, instead, we have to combine the properties into a single property
+    and add a filter which limits to `tag` values that contain `/some/page`.
+    You will see this in action later in section [4.2.2.6 Visualizing in `Plausible`](#4226-visualizing-in-plausible).
+- we've removed the event listeners when the component is unmounted.
+
+Now, let's create the `<ClientApplication>` component
+that is found in the `/pages/_app.tsx` file:
+
+Create a file called `/components/client-pages-root.tsx`:
+
+```tsx
+"use client";
+
+import { ReactNode } from "react";
+import ScrollDepthTracker from "./depth-tracker";
+
+interface ClientApplicationProps {
+  children: ReactNode;
+}
+
+const ClientApplication = ({ children }: ClientApplicationProps) => {
+  return (
+    <>
+      <ScrollDepthTracker />
+      {children}
+    </>
+  );
+};
+
+export default ClientApplication;
+```
+
+This component is used in the `pages/_app.tsx` file
+and is applied to all Pages Router pages.
+
+
+#### 4.2.2.5 Running the app
+
+Now, let's run the app!
+Run `sudo pnpm run dev` to start the development server.
+You should see the following pages in `https://localhost:3000`.
+
+<p align="center">
+    <img width="45%" src="https://github.com/user-attachments/assets/56b57b15-c8e5-4c1b-be17-ac3afcdb0c11">
+    <img width="45%" src="https://github.com/user-attachments/assets/02ebdd09-955d-4946-b895-384522f238a2">
+</p>
+
+As you can see,
+you are able to navigate to `/long-page` from the homepage through the link.
+
+When you scroll,
+when moving to another page/leaving the page/closing the browser,
+an event is sent to the `Plausible` server.
+
+Now, let's see it in action!
+
+#### 4.2.2.6 Visualizing in `Plausible`
+
+If you go to the `Plausible` dashboard,
+go to your website's settings
+and check the `Custom Events` section
+(like we did previously),
+you can add the `tag` and `path` property
+from our newly created custom event
+to the dashboard.
+
+<p align="center">
+    <img width="800" src="https://github.com/user-attachments/assets/6cb73717-324c-4cd1-8b61-ec1cb7b596af">
+</p>
+
+If you do so,
+you can check it in the main dashboard,
+like so.
+
+<p align="center">
+    <img width="800" src="https://github.com/user-attachments/assets/36091652-11bf-4034-96a7-88b09e1af9d0">
+</p>
+
+Great!
+But this information is useless.
+We are going to leverage this `tag` property
+to filter the data in the dashboard
+so we can see the scroll depth of a specific page
+and how much people are scrolling on it.
+
+Scroll up, click on `Filter`
+and select `Properties` and `tag`.
+We are going to filter it so it contains `/long-page`
+(or any other page you want to track).
+
+<p align="center">
+    <img width="800" src="https://github.com/user-attachments/assets/057d86c7-bf94-41b7-b189-261bd4ea7626">
+</p>
+
+This, as we know,
+will apply the filter to all the data in the whole dashboard page.
+If we scroll back down to the `Goals` section,
+check the properties
+and see the `depth` property we've defined,
+we will see how much people are scrolling on the page!
+
+<p align="center">
+    <img width="800" src="https://github.com/user-attachments/assets/518ce1f8-16ff-472c-9c79-1ab614f17bee">
+</p>
+
+As you can see,
+we can leverage the way we filter out the data in the dashboard
+to get these insights!
+
+Give yourself a pat on the back! 
+🎉
+
+
+#### 4.2.2.7 Considerations of depth features
+
+
 
 
 
