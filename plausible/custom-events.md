@@ -34,7 +34,8 @@ Sending custom events from `Next.js`
 
 Let's shallowly explore what we can do with `Plausible`!
 With `next-plausible`,
-we have very fine control of what we can send over to our `Plausible` analytics server!
+we have very fine control of what we can send over
+to our `Plausible` analytics server!
 
 One feature that is a perfect example of this are **custom events**.
 Let's send a custom event from our website to our `Plausible CE` server!
@@ -103,10 +104,14 @@ export function Navbar() {
 
 Let's break down our changes:
 
-- we've added the [`'use client'` directive](https://nextjs.org/docs/app/building-your-application/rendering/client-components#using-client-components-in-nextjs) to the top of the file.
+- we've added the
+  [`'use client'` directive](https://nextjs.org/docs/app/building-your-application/rendering/client-components#using-client-components-in-nextjs)
+  to the top of the file.
 This is because we're adding interactivity to this page
 by invoking an event handler when clicking a button.
-- added the [`usePlausible()` hook](https://github.com/4lejandrito/next-plausible#send-custom-events) from `next-plausible`.
+- added the
+  [`usePlausible()` hook](https://github.com/4lejandrito/next-plausible#send-custom-events)
+  from `next-plausible`.
 This hook will allow us to send custom events.
 - the `handleClick()` function is invoked every time the button is clicked.
 In here, we make use of the object returned by `usePlausible()`
@@ -134,7 +139,6 @@ and click the button with the browser dev tools open...
 Great job! 🥳
 
 Let's see what's on the other side 👀.
-
 
 ### 4.1.2 Custom events insights in our self-hosted `Plausible` server
 
@@ -177,11 +181,10 @@ of what we can track in our website.
 But wait ✋!
 We ain't done yet 😉!
 
-
 ### 4.1.3 Seeing custom events' props in `Plausible` dashboard
 
-Remember when we sent the `customEventName` with props
-in [3.1 Sending custom events from `Next.js`](#31-sending-custom-events-from-nextjs)?
+Remember when we sent the `customEventName` with props in
+[3.1 Sending custom events from `Next.js`](#31-sending-custom-events-from-nextjs)?
 These props can also be shown in the dashboard
 to analyze stats that aren't automatically tracked by `Plausible`.
 
@@ -257,8 +260,8 @@ to keep track of the person's session.
 
 > [!NOTE]
 >
-> You can find more informations about session management in `Next.js` 
-> in the [official documentation](https://nextjs.org/docs/app/building-your-application/authentication#session-management).
+> You can find more informations about session management in `Next.js` in the
+> [official docs](https://nextjs.org/docs/app/building-your-application/authentication#session-management).
 
 We are going to be creating a **session ID**
 that will be stored in a cookie.
@@ -281,7 +284,8 @@ pnpm add js-cookie uuid
 
 ### 4.2.1 Search custom event
 
-Let's create a custom event for when a user searches for something on our website.
+Let's create a custom event for when
+a user searches for something on our website.
 We want to track the top searches that are being made
 on our website.
 
@@ -349,7 +353,8 @@ export default function SearchInput() {
     if (!id) {
       // Generate a new session ID if it doesn't exist
       id = uuidv4();
-      // Set cookie to expire to 0 days. This means the cookie will be deleted when the browser is closed.
+      // Set cookie to expire to 0 days.
+      // This means the cookie will be deleted when the browser is closed.
       // See https://stackoverflow.com/questions/2537060/can-a-cookie-expire-when-either-some-time-passes-or-browser-is-closed
       Cookies.set("sessionId", id, { expires: 0 }); 
     }
@@ -414,16 +419,19 @@ export default function SearchInput() {
 }
 ```
 
-- we **check for an existing session** id using 
-  the `useEffect` hook, 
-  checking if a session ID already exists in the cookies using `Cookies.get("sessionId")`.
-- we **generate a new session ID**.
+- **check for an existing session** id using
+  the `useEffect` hook,
+  checking if a session ID already exists in the cookies using:
+  `Cookies.get("sessionId")`.
+- **generate a new session ID**.
   If no session ID exists, we generate a new one using `uuidv4()`
-  and store it in the cookies using `Cookies.set("sessionId", id, { expires: 0 })`.
+  and store it in the cookies using:
+  `Cookies.set("sessionId", id, { expires: 0 })`.
   The `{ expires: 0 }` option sets the cookie to expire when the browser is closed.
-- we **store the session ID in the component** state using `setSessionId(id)`.
-- we **include the session ID in the custom event properties**
-  when the form is submitted using `plausible("searchValue", { props: { value: searchValue || "", sessionId: sessionId } })`.
+- **store the session ID in the component** state using `setSessionId(id)`.
+- **include the session ID in the custom event properties**
+  when the form is submitted using:
+  `plausible("searchValue", { props: { value: searchValue || "", sessionId: sessionId } })`.
 
 If you run the application (`sudo pnpm run dev`)
 with `Plausible` instance running on your `localhost` too,
@@ -435,7 +443,8 @@ you will see a custom event being sent.
 </p>
 
 If you go to `http://localhost:8000/localhost/settings/properties`
-(this assumes you've created a `localhost` website in your `Plausible` instance),
+(this assumes you've created a `localhost` website
+in your `Plausible` instance),
 you can set the properties of custom events on the dashboard.
 When `Plausible` receives custom events,
 it will automatically detect the properties sent with the event.
@@ -457,8 +466,8 @@ We get a ranking of the most searched terms on our website!
 That is not all.
 We can filter all the information we have on the dashboard
 by the properties we've defined.
-Scroll back up and on `Filter` and select on `Properties` and on the `value` prop
-we're passing in our custom event.
+Scroll back up and on `Filter`and select on `Properties`
+and on the `value` prop we're passing in our custom event.
 
 <p align="center">
     <img width="45%" src="https://github.com/user-attachments/assets/35d5ceb1-10e7-4cf2-994d-a02b82dae8fd">
@@ -475,31 +484,36 @@ that contains a set of terms we've defined!
 This will give us insights on what people are searching for on our website
 and what we should focus on to increase engagement.
 
-
 ### 4.2.2 Page scroll depth
 
-In this section, 
+In this section,
 we will discuss the implementation of page scroll depth tracking.
 This is a common metric used to understand user engagement on a website
 and can be used to identify the most engaging parts of a page.
 
-This involves using both the 
+This involves using both the
 [`pages` and `app` routers](https://dev.to/dcs_ink/nextjs-app-router-vs-pages-router-3p57) together.
 We'll explain why this is necessary in a moment.
 
 #### 4.2.2.1 Why use both `pages` and `app` routers together
 
 In `Next.js`, 
-the **app directory** (`App Router`) introduces a new way to structure and manage routes, 
-while the **pages directory** (`Pages Router`) follows the traditional routing approach. 
-Using both routers together allows for a gradual migration 
-from the `Pages Router `to the `App Router` or a hybrid setup where different parts of the application can leverage the strengths of each router.
+the **app directory** (`App Router`) introduces
+a new way to structure and manage routes,
+while the **pages directory** (`Pages Router`)
+follows the traditional routing approach.
+Using both routers together allows for a gradual migration
+from the `Pages Router `to the `App Router`
+or a hybrid setup where different parts of the application
+can leverage the strengths of each router.
 
-One of the key reasons for using both routers together in this context **is the need for client components**. 
-Plausible requires client-side execution. 
+One of the key reasons for using both routers
+together in this context **is the need for client components**.
+Plausible requires client-side execution.
 The App Router's layout component is not easily compatible this purpose
 (since App Router is by default a *server component*),
- leading to the decision to use the Pages Router to easily add scroll depth tracking capabilities to all pages.
+ leading to the decision to use the Pages Router
+ to easily add scroll depth tracking capabilities to all pages.
 
 We can declare client components within App Router pages
 by using the `"use client"` directive at the top of the file.
@@ -508,7 +522,9 @@ But doing this for every page can be cumbersome.
 
 #### 4.2.2.2 Challenges with `layout.tsx` in App Router
 
-The [`layout.tsx` file in the App Router](https://nextjs.org/docs/app/building-your-application/routing/pages-and-layouts)
+The
+[`layout.tsx`](https://nextjs.org/docs/app/building-your-application/routing/pages-and-layouts)
+file in the App Router
 allows us to define a layout that wraps around all pages.
 This is a great way to ensure consistent styling across all pages.
 
@@ -516,24 +532,26 @@ Adding scroll depth tracking was attempted here.
 However, this approach faced several challenges:
 
 - **Hydration Errors**: 
-  Including `<html>`, `<head>`, and `<body>` tags in the layout component led to hydration errors 
-  because these tags are managed by `Next.js` and should not be included in the component.
+  Including `<html>`, `<head>`, and `<body>` tags
+  in the layout component led to hydration errors
+  because these tags are managed by `Next.js`
+  and should not be included in the component.
 
 - **Client-Side Execution**:
-  The `window` object, which is required for scroll depth tracking, 
-  is only available on the client side. 
-  Ensuring that the code accessing the `window` object runs only on the client side was challenging within the `layout` component.
+  The `window` object, which is required for scroll depth tracking,
+  is only available on the client side.
+  Ensuring that the code accessing the `window` object
+  runs only on the client side was challenging within the `layout` component.
 
-To address these challenges, 
-the scroll depth tracking functionality was moved to the Pages Router, 
+To address these challenges,
+the scroll depth tracking functionality was moved to the Pages Router,
 allowing for easier integration and client-side execution.
-
 
 #### 4.2.2.3 Restructure the project
 
 Restructure the project to the following:
 
-```
+```sh
 .
 ├── app
 │   ├── layout.tsx
@@ -556,15 +574,13 @@ Restructure the project to the following:
 ├── global.css
 ```
 
-- we essentially maintain the blog and many pages
-  inside the `app` directory.
-- we move the components to a dedicated `components` directory.
-- we move hte `global.css` file to the root of the project.
-- we create a `pages` directory
+- keep the blog and many pages  inside the `app` directory.
+- move the components to a dedicated `components` directory.
+- move hte `global.css` file to the root of the project.
+- create a `pages` directory
   and create a `_app.tsx` file inside it.
 
-
-Let's create the `pages/long-page.tsx` file:
+Create the `pages/long-page.tsx` file:
 
 ```tsx
 const LongPage = () => {
@@ -667,8 +683,10 @@ To implement scroll depth tracking,
 we are going to add a couple of new components.
 
 First one, is the **`ScrollDepthTracker` component**,
-which is responsible for tracking the maximum scroll depth and sending the data to Plausible.
-It uses the `useEffect` hook to add and remove event listeners for `scroll` and `beforeunload` events.
+which is responsible for tracking the maximum scroll depth
+and sending the data to Plausible.
+It uses the `useEffect` hook to add and remove event listeners
+for `scroll` and `beforeunload` events.
 The `window` object is accessed for scroll tracking.
 
 Create a new file `app/components/depth-tracker.tsx`:
@@ -755,11 +773,12 @@ Let's go over what we've implemented:
   - `depth`, a percentage of the scrolling depth. 
   - `tag`, a combination of the path and depth.
     This property is necessary to filter the data in the Plausible dashboard.
-    This is mostly because Plausible doesn't allow filtering by multiple properties
-    under a given path.
+    This is mostly because Plausible doesn't allow filtering
+    by multiple properties under a given path.
     So, instead, we have to combine the properties into a single property
     and add a filter which limits to `tag` values that contain `/some/page`.
-    You will see this in action later in section [4.2.2.6 Visualizing in `Plausible`](#4226-visualizing-in-plausible).
+    You will see this in action later in section
+    [4.2.2.6 Visualizing in `Plausible`](#4226-visualizing-in-plausible).
 - we've removed the event listeners when the component is unmounted.
 
 In this file, we have some considerations
@@ -885,9 +904,8 @@ As you can see,
 we can leverage the way we filter out the data in the dashboard
 to get these insights!
 
-Give yourself a pat on the back! 
+Give yourself a pat on the back!
 🎉
-
 
 ## 4.3 Funnel analysis
 
@@ -896,6 +914,8 @@ As of time of writing,
 for CE (Community Edition) users.
 This feature is only available for Cloud users.
 
-However, Plausible is planning on releasing this feature for CE users in the future.
-Check https://github.com/plausible/analytics/discussions/4639
+However, Plausible is planning on releasing
+this feature for CE users in the future.
+Check
+[plausible/analytics#4639](https://github.com/plausible/analytics/discussions/4639)
 for more information.
