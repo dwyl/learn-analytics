@@ -1,13 +1,12 @@
 # Exploring custom events in `Plausible` in `Next.js`
 
 > [!IMPORTANT]
->
 > This guide assumes you've already set up `Plausible` on your website.
-> Check [`README.md`](./README.md#4-exploring-custom-events-in-plausible) for more information.
-> Make sure you've set up `Plausible` and the integration in your `Next.js` site.
-
-For more information about custom events in `Plausible`,
-check [`custom-events.md`](./custom-events.md).
+> Check
+> [`README.md`](./README.md#4-exploring-custom-events-in-plausible)
+> for more information.
+> Make sure you've set up `Plausible`
+> and the integration in your `Next.js` site.
 
 - [Exploring custom events in `Plausible` in `Next.js`](#exploring-custom-events-in-plausible-in-nextjs)
   - [4.1 Custom events - full integration](#41-custom-events---full-integration)
