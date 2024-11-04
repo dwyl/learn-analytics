@@ -129,7 +129,4 @@ You'll also learn how to deploy `Plausible` to `DigitalOcean`!
 
 # And Then? 
 
-
-
 [![HitCount](https://hits.dwyl.com/dwyl/learn-analytics.svg?style=flat-square)](http://hits.dwyl.com/dwyl/learn-analytics)
-
