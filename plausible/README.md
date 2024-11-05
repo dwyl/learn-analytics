@@ -20,9 +20,6 @@
       - [3.2.2 Proxying the analytics script](#322-proxying-the-analytics-script)
       - [3.2.3 Running our `Next.js` app in `HTTPS`](#323-running-our-nextjs-app-in-https)
   - [4. Exploring custom events in `Plausible`](#4-exploring-custom-events-in-plausible)
-    - [4.1 Sending custom events from `Next.js`](#41-sending-custom-events-from-nextjs)
-    - [4.2 Custom events insights in our self-hosted `Plausible` server](#42-custom-events-insights-in-our-self-hosted-plausible-server)
-    - [4.3 Seeing custom events' props in `Plausible` dashboard](#43-seeing-custom-events-props-in-plausible-dashboard)
   - [5. Deploying to `fly.io`](#5-deploying-to-flyio)
     - [4.1 Clone the template](#41-clone-the-template)
     - [4.2 Setting up `clickhouse`](#42-setting-up-clickhouse)
@@ -43,28 +40,47 @@
       - [7.2.1 Installing `Docker` in our Linux VM](#721-installing-docker-in-our-linux-vm)
     - [7.3 Running it!](#73-running-it)
 
-
-
 # Why? 🤷‍
 
 In today's data-driven environment,
 it's _crucial_ to understand how users interact with your website.
-However, relying on third-party analytics services can raise concerns about data privacy, compliance with regulations like GDPR, and potential data leaks. 
-Deploying `Plausible Analytics` on-premises **gives you full control over your data**,
+However, relying on third-party analytics services
+can raise concerns about data privacy, compliance with regulations like GDPR,
+and potential data leaks.
+Deploying `Plausible Analytics` on-premises or on a VPS
+**gives you full control over your data**,
 ensuring privacy while still benefiting from actionable insights.
 
+This step-by-step guide
+shows how to deploy `Plausible Analytics`
+to `DigitalOcean`.
+
+> **Note**: If you prefer to pay **`€10/month`** for the _hosted_ version,
+> we recommend it if you don't need full control of your data.
+> We have been _paying_ customers of `Plausible Analytics`
+for the past couple of years ref:
+[dwyl/tech-stack#127](https://github.com/dwyl/technology-stack/issues/127)
+We only decided to host it ourselves
+so that we could _extend_ it with new features
+that the creators are not planning to add.
+This is one of the beauties of Open Source;
+it can be customized and extended.
 
 # What? 💭
 
-`Plausible Analytics`: 
+`Plausible Analytics`:
 [plausible.io](https://plausible.io/)
-is an open-source, privacy-friendly, and lightweight web analytics tool. 
-`Plausible` is designed to be simple to use, yet powerful enough to provide meaningful insights without compromising user privacy.
+is an open-source, privacy-friendly, and lightweight web analytics tool.
+`Plausible` is designed to be simple to use,
+yet powerful enough to provide meaningful insights
+without compromising user privacy.
 
-`Plausible` provides you [two versions of their product](https://github.com/plausible/analytics#can-plausible-be-self-hosted):
+`Plausible` provides you
+[two versions of their product](https://github.com/plausible/analytics#can-plausible-be-self-hosted):
 - `Plausible Analytics Cloud`,
 their cloud-hosting solution that is *paid*.
-Since it's an [IaaS](https://azure.microsoft.com/en-us/resources/cloud-computing-dictionary/what-is-iaas),
+Since it's an
+[IaaS](https://azure.microsoft.com/en-us/resources/cloud-computing-dictionary/what-is-iaas),
 most of the heavy lifting is done for you,
 and it's quick to set up.
 - `Plausible Community Edition`, their open-source.
@@ -78,25 +94,27 @@ and avoid the privacy pitfalls associated with traditional analytics solutions.
 
 So this is where we'll be focusing in this tutorial!
 
-
 # Who? 👤
 
 This guide is intended for developers, system administrators, and tech-savvy individuals
 who want to self-host Plausible Analytics to maintain control over their website’s analytics data.
 It's particularly relevant for those concerned with privacy, compliance, or simply preferring to avoid third-party dependencies.
 
-
 # How? 👩‍💻
 
 ## Pre-requisites
 
 In this tutorial,
-we are assuming you have [`Docker`](https://docs.docker.com/engine/install/) installed.
+we are assuming you have
+[`Docker`](https://docs.docker.com/engine/install/)
+installed.
 Additionally,
 we will be using `npx` (which should be included in the `npm` install)
 and [`pnpm` ](https://pnpm.io/installation)
 as package manager,
-since we're going to be using a simple [`Next.js`](https://nextjs.org/) application to get insights from
+since we're going to be using a simple
+[`Next.js`](https://nextjs.org/)
+application to get insights from
 (alongside a simpler, barebones `HTML` website).
 
 **We assume you have basic knowledge of the aforementioned**.
@@ -123,7 +141,6 @@ Let's go! 🏃
 > so we highly recommend you check out the [official docs](https://github.com/plausible/community-edition/#install)
 > if you want more detailed explanation.
 
-
 ## 0. Quickstart
 
 Do you want to just see it running?
@@ -134,7 +151,12 @@ and [1.1. Configuring `plausible-conf.env`](#11-configuring-plausible-confenv)
 to download `Plausible CE` and having it running on your `localhost`.
 It's really fast, don't worry!
 After cloning and setting up the env variables,
-run `docker compose -f docker-compose.yml -f reverse-proxy/docker-compose.caddy-gen.yml up -d` in your terminal.
+run the following command in your terminal:
+
+```sh
+docker compose -f docker-compose.yml -f reverse-proxy/docker-compose.caddy-gen.yml up -d
+```
+
 Follow through the instructions in the screen
 (see [1.3 Running it!](#13-running-it) for more detail).
 **Make sure you set the `domain` of the site to `localhost`**
@@ -165,24 +187,25 @@ And that's it! 😊
 Do you want to follow through the tutorial more in-depth?
 Keep on reading!
 
-
 ## 0.2 A preface
 
-When reading this document, be aware that `Plausible` has three different components:
-- the `Plausible` service, which is a web application.
-- a `PostgreSQL` database that saves user and general data.
-- a `Clickhouse` database that saves event data generated by website traffic.
+When reading this document, be aware that `Plausible`]
+has three different components:
+
+1. the `Plausible` service, which is a web application.
+2. a `PostgreSQL` database that saves user and general data.
+3. a `Clickhouse` database that saves event data generated by website traffic.
 
 Throughout this guide,
 you will see all of these three mentioned.
 So keep that in mind! 🙂
 
-
 ## 1. Getting `Plausible CE` running on your `localhost`
 
-Let's start with `Plausible` before going over to a sample `Next.js` application.
+Start with `Plausible` before going over to a sample `Next.js` application.
 
-First, clone https://github.com/plausible/community-edition.
+First, clone
+[github.com/plausible/community-edition](https://github.com/plausible/community-edition).
 It's everything you need to start our own `Plausible CE` server.
 
 ```sh
@@ -191,19 +214,20 @@ git clone https://github.com/plausible/community-edition
 
 If you peruse over the cloned folder,
 you'll notice two files at root level.
-- `docker-compose.yml`, which orchestrates the services that make up the `Plausible Analytics` platform.
+- `docker-compose.yml`, which orchestrates the services
+  that make up the `Plausible Analytics` platform.
 These include the server and the databases.
 - `plausible-conf.env`, which configures the server.
-You can check all the options [in the docs](https://github.com/plausible/community-edition/#configure),
+You can check all the options in the
+[plausible docs](https://github.com/plausible/community-edition/#configure),
 but we'll focus on minimal changes to get started ASAP.
 
 If you're *opting out* of reverse proxy and `HTTPS`,
 you'd need to adjust `docker-compose.yml`,
-and change the service configuration to ensure it's not limited only to `localhost`.
-However,
-we do not need/want to do this,
+and change the service configuration
+to ensure it's not limited only to `localhost`.
+However, we do not need/want to do this,
 both for heightened security and to keep this tutorial simpler.
-
 
 ### 1.1. Configuring `plausible-conf.env`
 
@@ -230,7 +254,8 @@ openssl rand -base64 48
 Copy and paste the value into the `.env` file.
 
 To generate `TOPT_VAULT_KEY`,
-which is used to encrypt [TOTP](https://en.wikipedia.org/wiki/Time-based_one-time_password) secrets,
+which is used to encrypt
+[TOTP](https://en.wikipedia.org/wiki/Time-based_one-time_password) secrets,
 we'll also generate a key using `OpenSSL`.
 
 ```sh
@@ -268,14 +293,19 @@ TOTP_VAULT_KEY=sMAJ3mdbLDj0WzFIqlhsWNSFcnNpgt8aRJLgfN+w/NQ=
 
 > [!NOTE]
 > This section is *optional*.
-> You don't need to configure this if you're going to run **only on `localhost`**.
+> You don't need to configure this
+> if you're going to run **only on `localhost`**.
 
 Now that our `Plausible` server is configured,
-let's shift our focus to our [reverse proxy](https://www.cloudflare.com/en-gb/learning/cdn/glossary/reverse-proxy/) service.
+let's shift our focus to our
+[reverse proxy](https://www.cloudflare.com/en-gb/learning/cdn/glossary/reverse-proxy/)
+service.
 
-`Plausible` uses [**`Caddy`**](https://caddyserver.com/docs/quick-starts/reverse-proxy)
+`Plausible` uses
+[**`Caddy`**](https://caddyserver.com/docs/quick-starts/reverse-proxy)
 as a reverse proxy.
-`Caddy` will help us issue [`TLS` certificates](https://www.digicert.com/tls-ssl/tls-ssl-certificates)
+`Caddy` will help us issue
+[`TLS` certificates](https://www.digicert.com/tls-ssl/tls-ssl-certificates)
 so our website to run in `HTTPS` and properly communicate with our base URL.
 
 While this is not needed for out example (since we're running on `localhost`),
@@ -298,7 +328,7 @@ and change `virtual.host` and `virtual.tls-email`.
 ```yml
   plausible:
     labels:
-      virtual.host: "plausible.example.com"                   # change to your domain name
+      virtual.host: "plausible.example.com"         # change to your domain name
       virtual.port: "8000"
       virtual.tls-email: "admin@plausible.example.com" # change to your email
 ```
@@ -411,7 +441,8 @@ Create a file called `simple_website.html`
     <title>A simple site to test Plausible Analytics</title>
   </head>
   <body>
-    <p>Just a simple HTML page to test if Plausible Analytics is working. Great for testing!</p>
+    <p>Just a simple HTML page to test if Plausible Analytics is working.
+      Great for testing!</p>
   </body>
 </html>
 ```
@@ -428,10 +459,12 @@ Change it to the following.
 <html>
   <head>
     <title>A simple site to test Plausible Analytics</title>
-    <script defer data-domain="localhost" src="http://localhost:8000/js/script.local.js"></script>
+    <script defer data-domain="localhost"
+      src="http://localhost:8000/js/script.local.js"></script>
   </head>
   <body>
-    <p>Just a simple HTML page to test if Plausible Analytics is working. Great for testing!</p>
+    <p>Just a simple HTML page to test if Plausible Analytics is working.
+      Great for testing!</p>
   </body>
 </html>
 ```
@@ -504,9 +537,9 @@ you will see that a folder called `blog` has been created,
 with the following output in the terminal.
 
 ```sh
-.../19144357ea5-146e                     |   +1 +
+.../19144357ea5-146e             |   +1 +
 .../19144357ea5-146e                     | Progress: resolved 1, reused 0, downloaded 1, added 1, done
-Creating a new Next.js app in /Users/lucho/Documents/dwyl/learn-analytics/plausible/website/blog.
+Creating a new Next.js app in /learn-analytics/plausible/website/blog
 
 Downloading files from repo https://github.com/vercel/examples/tree/main/solutions/blog. This might take a moment.
 
@@ -540,7 +573,7 @@ dependencies:
 
 Done in 11.7s
 
-Success! Created blog at /Users/lucho/Documents/dwyl/learn-analytics/plausible/website/blog
+Success! Created blog at /learn-analytics/plausible/website/blog
 Inside that directory, you can run several commands:
 
   pnpm run dev
@@ -691,15 +724,15 @@ in https://github.com/4lejandrito/next-plausible#plausibleprovider-props.
 #### 3.2.2 Proxying the analytics script
 
 To avoid being blocked by adblockers,
-[`Plausible` recommends proxying the analytics script.](https://plausible.io/docs/proxy/introduction).
+`Plausible` recommends
+[proxying the analytics script](https://plausible.io/docs/proxy/introduction).
 This is because many adblockers block analytics domain
 (which include Google Analytics)
 to maintain user's privacy.
 
 Proxying the analytics script is important
 if you don't want to miss data from people that use adblockers.
-However,
-because we're self-hosting,
+However, because we're self-hosting,
 the probability of the domain that's hosting our `Plausible CE` instance
 to be in the adblockers blacklist is quite minimal
 (see https://github.com/plausible/analytics/issues/158 for more information).
@@ -713,7 +746,9 @@ that proxies our `Next.js` application,
 we just need to sprinkle it with some configuration.
 
 Inside the root of the project,
-create a [`next.config.js`](https://nextjs.org/docs/app/api-reference/next-config-js) file.
+create a
+[`next.config.js`](https://nextjs.org/docs/app/api-reference/next-config-js)
+file.
 
 ```js
 // @ts-check
@@ -753,13 +788,15 @@ you may have noticed that they only support `HTTPS` domains.
 
 Because our `Next.js` runs in `HTTP` in development mode,
 that poses a problem.
-Sure, we could build our website and serve it under a reverse proxy with `Docker`.
+Sure, we could build our website
+and serve it under a reverse proxy with `Docker`.
 But that's out of scope for this tutorial.
 So, in the spirits of [KISS](https://en.wikipedia.org/wiki/KISS_principle),
 we can leverage an experimental flag when running our `pnpm run dev` script
 in `package.json`.
 
-As per https://vercel.com/guides/access-nextjs-localhost-https-certificate-self-signed,
+As per
+https://vercel.com/guides/access-nextjs-localhost-https-certificate-self-signed
 we can change our `"dev"` script inside our `package.json`,
 like so:
 
@@ -829,224 +866,9 @@ and we're sending a `pageview` event to it!
 
 ## 4. Exploring custom events in `Plausible`
 
-We're already gaining awesome insights!
-But we can go a little further.
-
-
-### 4.1 Sending custom events from `Next.js`
-
-Let's shallowly explore what we can do with `Plausible`!
-With `next-plausible`,
-we have very fine control of what we can send over to our `Plausible` analytics server!
-
-One feature that is a perfect example of this are **custom events**.
-Let's send a custom event from our website to our `Plausible CE` server!
-
-Head over to `app/components/nav.tsx`
-and change it like so:
-
-```tsx
-'use client'
-
-import Link from "next/link";
-import { usePlausible } from 'next-plausible'
-
-const navItems = {
-  "/": {
-    name: "home",
-  },
-  "/blog": {
-    name: "blog",
-  },
-  "https://vercel.com/templates/next.js/portfolio-starter-kit": {
-    name: "deploy",
-  },
-};
-
-export function Navbar() {
-  const plausible = usePlausible()
-
-  function handleClick() {
-    plausible("customEventName", {
-      props: {
-        buttonId: "foo",
-      },
-    })
-  }
-
-  return (
-    <aside className="-ml-[8px] mb-16 tracking-tight">
-      <div className="lg:sticky lg:top-20">
-        <nav className="flex flex-row items-start relative px-0 pb-0 fade md:overflow-auto scroll-pr-6 md:relative" id="nav">
-          <div className="flex flex-row space-x-0 pr-10">
-            {Object.entries(navItems).map(([path, { name }]) => {
-              return (
-                <Link
-                  key={path}
-                  href={path}
-                  className="transition-all hover:text-neutral-800 dark:hover:text-neutral-200 flex align-middle relative py-1 px-2 m-1"
-                >
-                  {name}
-                </Link>
-              );
-            })}
-          </div>
-          <button
-            id="foo"
-            onClick={handleClick}
-          >
-            Send event to Plausible!
-          </button>
-        </nav>
-      </div>
-    </aside>
-  );
-}
-```
-
-Let's break down our changes:
-
-- we've added the [`'use client'` directive](https://nextjs.org/docs/app/building-your-application/rendering/client-components#using-client-components-in-nextjs) to the top of the file.
-This is because we're adding interactivity to this page
-by invoking an event handler when clicking a button.
-- added the [`usePlausible()` hook](https://github.com/4lejandrito/next-plausible#send-custom-events) from `next-plausible`.
-This hook will allow us to send custom events.
-- the `handleClick()` function is invoked every time the button is clicked.
-In here, we make use of the object returned by `usePlausible()`
-to send a **custom event with props**.
-This custom even is called `"customEventName"`.
-- added a `<button>` inside `Navbar` which,
-when clicked, invokes `handleClick()`.
-
-That's it!
-If we run our application again
-(`sudo pnpm run dev`),
-and click the button with the browser dev tools open...
-
-<p align="center">
-    <img width="700" src="https://github.com/user-attachments/assets/478198c2-a348-4ef7-9f84-80530f5964f8">
-</p>
-
-
-...we'll see our event being sent to the `Plausible` server!
-
-<p align="center">
-    <img width="700" src="https://github.com/user-attachments/assets/26775161-c6e1-40a3-8776-b31158e1fab5">
-</p>
-
-Great job! 🥳
-
-Let's see what's on the other side 👀.
-
-
-### 4.2 Custom events insights in our self-hosted `Plausible` server
-
-Our `Plausible` server is receiving these events.
-However, how do we see them?
-
-If you scroll to the bottom of the page,
-you'll see a **`Goal Conversions`** section,
-where we can define *goals* depending on custom events we've defined.
-Click on `Set up goals ->`.
-
-<p align="center">
-    <img width="700" src="https://github.com/user-attachments/assets/02f60e33-1760-481a-a1e2-66ce9dd002d6">
-</p>
-
-Let's add a goal by clicking `+ Add Goal`
-and adding the name of the same event
-that we've defined in our `Next.js` site.
-You'll inclusively see that `Plausible` displays some text
-stating that it already found custom events being sent,
-so we know we're on the right track!
-
-<p align="center">
-  <img width="45%" src="https://github.com/user-attachments/assets/7656bafe-69f0-40a8-be84-5c04604f6e31">
-  <img width="45%" src="https://github.com/user-attachments/assets/0879a560-d140-4a9e-b004-df87bce3ef88">
-</p>
-
-After adding the goal,
-navigate back to the dashboard
-and you'll see that it's correctly tracking this newly added custom event!
-
-<p align="center">
-    <img width="700" src="https://github.com/user-attachments/assets/8293270d-7de4-48d3-bb45-842e41d67844">
-</p>
-
-Boom, baby! 😎
-This opens a whole new world of possibilities
-of what we can track in our website.
-
-But wait ✋!
-We ain't done yet 😉!
-
-
-### 4.3 Seeing custom events' props in `Plausible` dashboard
-
-Remember when we sent the `customEventName` with props
-in [3.1 Sending custom events from `Next.js`](#31-sending-custom-events-from-nextjs)?
-These props can also be shown in the dashboard
-to analyze stats that aren't automatically tracked by `Plausible`.
-
-Therefore,
-this is *an additional way of tracking the behaviour of people using our site*.
-And we can define custom metrics with these props
-and track it accordingly!
-
-For this, click on the `Properties` tab in the `Goals` section.
-
-<p align="center">
-    <img width="700" src="https://github.com/user-attachments/assets/0141abf3-e520-437d-8e62-9a6b1c28bc2a">
-</p>
-
-Click on `Set up props ->`.
-
-<p align="center">
-    <img width="700" src="https://github.com/user-attachments/assets/39290aed-5e04-4448-a993-16bd9b8fa16e">
-</p>
-
-Click on `+ Add Property`.
-This will be the same property that we were sending with the custom event
-we've defined earlier.
-
-When you open it,
-you will be shown a combo list.
-You will be able to choose `buttonId`,
-the prop we've sent with the custom event.
-Yet again,
-you will see that `Plausible` detected this new prop automatically.
-
-<p align="center">
-    <img width="700" src="https://github.com/user-attachments/assets/6bae7032-2c89-4633-a40a-dae40ccdda4f">
-</p>
-
-Click on `Add Property`.
-This property has now been successfully added.
-
-<p align="center">
-    <img width="700" src="https://github.com/user-attachments/assets/1e2e7ecc-e71c-456f-a19d-88f328dfb3e0">
-</p>
-
-Now, if we head back to the main dashboard of our website,
-you will see that we can now choose the propertie(s) to show in the dashboard.
-Choose `buttonId`,
-and you'll see it displayed in all its glory!
-
-<p align="center">
-  <img width="45%" src="https://github.com/user-attachments/assets/380777d8-cb10-4504-916e-e74aa21f5e92">
-  <img width="45%" src="https://github.com/user-attachments/assets/861e5748-5879-44fb-bc46-fbe9f7f0874d">
-</p>
-
-`"foo"` is the value of the prop we've passed.
-
-With this,
-you can cover many use cases
-and gain a myriad of insights on how people
-are interacting with your website,
-their journey
-and what you need to focus on to increase engagement.
-
-The possibilities are endless! ✨
+For more information about custom events in `Plausible`,
+check [`custom-events.md`](./custom-events.md).
+We're going to focus on doing custom events in `Next.js`.
 
 
 ## 5. Deploying to `fly.io`
@@ -1054,7 +876,8 @@ The possibilities are endless! ✨
 > [!IMPORTANT]
 >
 > We didn't quite get this to work on `fly.io`,
-> because the `Plausible` app was not able to connect properly to the `PostgreSQL` database.
+> because the `Plausible` app was not able to connect properly
+> to the `PostgreSQL` database.
 > We are still keeping this section in case we can make it work
 > or/and to provide you more insights on the process.
 >
@@ -1062,7 +885,8 @@ The possibilities are endless! ✨
 > - https://iagocavalcante.com/articles/how-to-deploy-plausible-analytics-at-fly-io
 > - https://blog.liallen.me/self-host-plausible-with-fly
 >
-> Our files are more up-to-date than the ones used in the aforementioned resources
+> Our files are more up-to-date than the ones
+> used in the aforementioned resources
 > but the process is the same.
 > Check the following links for more context on what's happening
 > (they may have new information after the time of writing):
@@ -1084,11 +908,11 @@ In this section,
 we'll be focusing on deploying our self-hosted `Plausible CE` instance
 to [`fly.io`](https://fly.io/).
 
-
 If this is your first time using `fly.io`,
 we *highly recommend* you read
-their [`Fly.io Essentials`](https://fly.io/docs/getting-started/essentials/) docs.
-
+their
+[`Fly.io Essentials`](https://fly.io/docs/getting-started/essentials/)
+docs.
 
 ### 4.1 Clone the template
 
@@ -1109,7 +933,6 @@ to `clickhouse` and another for `plausible`.
 Let's start with the former.
 Before starting, though,
 you need to [create an organization in `fly.io`](https://fly.io/docs/flyctl/orgs/).
-
 
 ### 4.2 Setting up `clickhouse`
 
@@ -1156,7 +979,6 @@ fly deploy
 ```
 
 And we're done with `Clickhouse`!
-
 
 ### 4.3 Setting up `plausible`
 
@@ -1224,7 +1046,8 @@ Save your credentials in a secure place -- you won't be able to see them again!
 Connect to postgres
 Any app within the dwyl-atm organization can connect to this Postgres using the above connection string
 
-Now that you've set up Postgres, here's what you need to understand: https://fly.io/docs/postgres/getting-started/what-you-should-know/
+Now that you've set up Postgres, here's what you need to understand:
+https://fly.io/docs/postgres/getting-started/what-you-should-know/
 Checking for existing attachments
 Registering attachment
 Creating database
@@ -1235,7 +1058,7 @@ The following secret was added to plausible-ce-app:
   DATABASE_URL=<DATABASE_URL>
 Postgres cluster plausible-ce-db is now attached to plausible-ce-app
 Wrote config file fly.toml
-Validating /Users/lucho/Documents/dwyl/learn-analytics/plausible/flyio_deploy/plausible/fly.toml
+Validating /learn-analytics/plausible/flyio_deploy/plausible/fly.toml
 ✓ Configuration is valid
 Your app is ready! Deploy with `flyctl deploy`
 ```
@@ -1324,10 +1147,13 @@ fly deploy
 >
 > Because we only have 3 apps in the lowest tier,
 > this should be free.
-> However, check https://fly.io/docs/about/pricing/#free-allowances for more information about pricing.
+> However, check
+> https://fly.io/docs/about/pricing/#free-allowances
+> for more information about pricing.
 
 The release command may succeed, but the machine might not be healthy.
-This is where we change the `release_command` from `db createdb` to **`db migrate`**.
+This is where we change the `release_command`
+from `db createdb` to **`db migrate`**.
 
 Deploy again.
 
@@ -1361,16 +1187,19 @@ you will see the self-hosted `Plausible CE` in all its glory!
     <img width="700" src="https://github.com/user-attachments/assets/2a4f186d-d8d8-4237-95f7-08beac307202">
 </p>
 
-
 ## 6. Deploying to `DigitalOcean` Droplet
 
 Deploying to `DigitalOcean` is easy.
 We just need to:
-- boot up a [`Droplet` virtual machine](https://www.digitalocean.com/products/droplets) with `Docker` installed.
+
+- Boot up a
+  [`Droplet` virtual machine](https://www.digitalocean.com/products/droplets)
+  with `Docker` installed.
 - have a domain so the `Droplet` has a hostname.
 - `ssh` into the machine and `git clone` the https://github.com/plausible/community-edition
 repo into it.
-- follow the steps we did in [1. Getting `Plausible CE` running on your `localhost`](#1-getting-plausible-ce-running-on-your-localhost)
+- follow the steps we did in
+  [1. Getting `Plausible CE` running on your `localhost`](#1-getting-plausible-ce-running-on-your-localhost)
 to get it running.
 
 This section will be easy because, luckily,
@@ -1422,7 +1251,8 @@ This will cost you `$6` per month
 (at the time of writing).
 - choose an authentication method.
 We recommend going with `SSH Key`, it's safer.
-The process is simple, follow the steps in https://www.digitalocean.com/community/tutorials/how-to-configure-ssh-key-based-authentication-on-a-linux-server.
+The process is simple, follow the steps in
+https://www.digitalocean.com/community/tutorials/how-to-configure-ssh-key-based-authentication-on-a-linux-server.
 This will you to access the virtual machine from your own computer easily!
 - choose an identifying name.
 We've named ours `"dwyl-plausible"`.
@@ -1437,7 +1267,8 @@ After this, click on `Create Droplet`.
 You will be redirected to your project's page
 with the `Droplet` being created with a loading bar.
 After it's finished,
-you'll have access to the IP address other configurations of the `Droplet` you've just created.
+you'll have access to the IP address other configurations of the `Droplet`
+you've just created.
 
 <p align="center">
   <img width="45%" src="https://github.com/user-attachments/assets/de7b4888-6bd4-489e-b6e2-58965222157b">
@@ -1507,8 +1338,10 @@ Navigate into it (`cd plausible`).
 
 From now on, we just need to follow the same instructions
 that we've done in [1. Getting `Plausible CE` running on your `localhost`](#1-getting-plausible-ce-running-on-your-localhost).
-You can also [follow the quick start of the official repo](https://github.com/plausible/community-edition#quick-start)
-(which are the same as we previously done, but may be more up-to-date, so it's recommended).
+You can also
+[follow the quick start of the official repo](https://github.com/plausible/community-edition#quick-start)
+(which are the same as we previously done,
+but may be more up-to-date, so it's recommended).
 
 So, change the `plausible-conf.env`.
 
@@ -1606,11 +1439,11 @@ since Microsoft regularly updates their T&C.
 For more information about the free services provided by Azure,
 refer to https://azure.microsoft.com/en-us/pricing/free-services.
 
-
 ### 7.1 Create a virtual machine
 
 Let's start by creating a virtual machine.
-Navigate to https://portal.azure.com/#view/Microsoft_Azure_Billing/FreeServicesBlade
+Navigate to
+https://portal.azure.com/#view/Microsoft_Azure_Billing/FreeServicesBlade
 to see the free services we've got at our disposal.
 
 <p align="center">
@@ -1720,7 +1553,8 @@ ssh -i <path to the .pem file> username@<ipaddress of the VM>
 >
 > Feel free to skip it if you've created a Linux VM.
 
-We'll connect to our virtual machine via [SSH](https://www.cloudflare.com/en-gb/learning/access-management/what-is-ssh/).
+We'll connect to our virtual machine via
+[SSH](https://www.cloudflare.com/en-gb/learning/access-management/what-is-ssh/).
 
 To do this, in a Windows VM,
 we'll first need to enable SSH in our virtual machine
@@ -1793,7 +1627,8 @@ az network nsg rule create -g $myResourceGroup --nsg-name $myNSG -n allow-SSH --
 >
 > Change the `$myResourceGroup` and `$myNSG` variables
 > to your VM details.
-> `NSG` stands for [Network Security Groups](https://learn.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview).
+> `NSG` stands for
+> [Network Security Groups](https://learn.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview).
 > When you created your VM,
 > an `NSG` has been created for you
 > with the name **`{VM_NAME}-nsg`**.
@@ -1807,7 +1642,8 @@ az network nsg rule create -g $myResourceGroup --nsg-name $myNSG -n allow-SSH --
 > The VM **must have a public IP address**.
 > You can check this on the "Overview" of the VM dashboard.
 > If it doesn't,
-> you need to [associate a public IP address to your VM](https://learn.microsoft.com/en-gb/azure/virtual-network/ip-services/associate-public-ip-address-vm?tabs=azure-portal).
+> you need to
+> [associate a public IP address to your VM](https://learn.microsoft.com/en-gb/azure/virtual-network/ip-services/associate-public-ip-address-vm?tabs=azure-portal).
 > Additionally, for us to connect through SSH,
 > the VM **must be running**.
 
@@ -1825,7 +1661,8 @@ az vm run-command invoke -g $myResourceGroup -n $myVM --command-id RunPowerShell
 >
 > Change the `$myResourceGroup` and `$myVM` variables
 > to your VM details.
-> `NSG` stands for [Network Security Groups](https://learn.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview).
+> `NSG` stands for
+> [Network Security Groups](https://learn.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview).
 > You can find them in the virtual machine dashboard.
 
 Let the command execute!
